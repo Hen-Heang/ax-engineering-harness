@@ -67,16 +67,19 @@ test('every run record shipped here is an example, because nothing has executed'
   }
 });
 
-test('a run claiming to be recorded is rejected while nothing can execute', () => {
+test('a recorded run is accepted now that the gate runner can produce one', () => {
   const example = getRun('example-cancellation');
   assert.ok(example);
   assert.equal(validateRunRecord(example).valid, true);
 
-  const fabricated = validateRunRecord({ ...example, kind: 'recorded' });
-  assert.equal(fabricated.valid, false);
-  if (!fabricated.valid) assert.equal(fabricated.issues[0]?.code, 'run.not_executable');
+  // This used to be refused, because nothing could execute a run and such a record
+  // could only have been fabricated. The gate runner lifted that condition.
+  assert.equal(validateRunRecord({ ...example, kind: 'recorded' }).valid, true);
 
+  // The narrower rule still holds: a record shipped with the harness is an example,
+  // which the test above asserts over every record in the registry.
   assert.equal(validateRunRecord({ ...example, surprise: true }).valid, false);
+  assert.equal(validateRunRecord({ ...example, kind: 'invented' }).valid, false);
   assert.equal(validateRunRecord(null).valid, false);
 });
 

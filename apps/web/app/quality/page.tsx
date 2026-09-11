@@ -29,9 +29,11 @@ export default function QualityPage() {
           disabled.
         </p>
         <p>
-          <strong className="font-medium text-foreground">No gate has been run.</strong>{' '}
-          The harness plans gates and reports their outcomes. It does not execute
-          commands, so every gate it currently plans is unrun.
+          <strong className="font-medium text-foreground">This console runs nothing.</strong>{' '}
+          The harness can run these gates from the command line, with{' '}
+          <code className="font-mono text-xs">ax run --execute</code>, after checking that
+          the acting role holds the capability to do so. Reporting is the default, and
+          every gate shown here is unrun.
         </p>
       </PageHeader>
 

@@ -23,16 +23,18 @@ export default function RunsPage() {
           it, which files were read and changed, and how each gate turned out.
         </p>
         <p>
-          <strong className="font-medium text-foreground">Nothing here was executed.</strong>{' '}
-          The harness has no execution engine, so every record is an example. A record
-          may only claim to be recorded if a real execution produced it, and the
-          validator rejects one that claims otherwise.
+          <strong className="font-medium text-foreground">The record below is an example.</strong>{' '}
+          The harness can now produce real records, by running a project's gates from the
+          command line, and it writes them to that project's own{' '}
+          <code className="font-mono text-xs">.ax/runs/</code> directory rather than into
+          this repository. A record shipped here is therefore always an example.
         </p>
       </PageHeader>
 
       <ExampleNotice>
         The run below is illustrative. Its duration, files and gate outcomes were written
-        as a demonstration of the record format, not produced by running anything.
+        as a demonstration of the record format, not produced by running anything. Real
+        records live in the project that was run, not here.
       </ExampleNotice>
 
       <ul className="flex flex-col gap-6">

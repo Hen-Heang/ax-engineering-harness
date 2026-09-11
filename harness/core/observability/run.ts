@@ -39,22 +39,17 @@ export type RunValidation =
 /**
  * Validates an external run record without trusting or storing it.
  *
- * A record claiming to be `recorded` is rejected, because no component in this build
- * can execute a run, so such a record could only have been fabricated. Remove this
- * check deliberately when a real execution engine exists, not before.
+ * This used to reject `kind: "recorded"` outright, because nothing in the build could
+ * execute a run and such a record could therefore only have been fabricated. The gate
+ * runner in `core/execution` can now produce one, so that refusal has been lifted
+ * deliberately, which is the condition the earlier check was written to wait for.
+ *
+ * What still holds is narrower and enforced elsewhere: a record shipped *with* the
+ * harness must be an example, because a real run belongs to whoever ran it rather
+ * than to this repository. The built-in registry keeps that check.
  */
 export function validateRunRecord(input: unknown): RunValidation {
   if (validateSchema(input)) {
-    if (input.kind === 'recorded') {
-      return {
-        valid: false,
-        issues: [{
-          path: '/kind',
-          code: 'run.not_executable',
-          message: 'A recorded run requires a real execution, which this build cannot produce.',
-        }],
-      };
-    }
     return { valid: true, record: input };
   }
   return {
@@ -73,4 +68,45 @@ export function validateRunRecord(input: unknown): RunValidation {
  */
 export function isMeasured(record: RunRecord, field: 'inputTokens' | 'outputTokens' | 'costUsd'): boolean {
   return record.measurements?.[field] !== undefined;
+}
+
+export interface RunRecordInputs {
+  id: string;
+  task: string;
+  agent: string;
+  profile: string;
+  tools: RunRecord['tools'];
+  gates: RunRecord['gates'];
+  notes: [string, ...string[]];
+  durationSeconds?: number;
+  retries?: number;
+}
+
+/**
+ * Builds a recorded run and validates it before returning.
+ *
+ * Construction goes through validation so a caller cannot produce a record that the
+ * schema would reject. Fields this harness does not measure are left out rather than
+ * defaulted: it does not track which files a command read or changed, and it measures
+ * no tokens or cost, so those stay absent and continue to mean unmeasured.
+ */
+export function buildRunRecord(inputs: RunRecordInputs): RunValidation {
+  const passed = inputs.gates.every(gate => gate.outcome === 'passed');
+  const record = {
+    schemaVersion: 1 as const,
+    id: inputs.id,
+    kind: 'recorded' as const,
+    task: inputs.task,
+    agent: inputs.agent,
+    profile: inputs.profile,
+    status: (inputs.gates.length > 0 && passed ? 'completed' : 'failed') as RunRecord['status'],
+    retries: inputs.retries ?? 0,
+    tools: inputs.tools,
+    filesRead: [],
+    filesChanged: [],
+    gates: inputs.gates,
+    notes: inputs.notes,
+    ...(inputs.durationSeconds === undefined ? {} : { durationSeconds: inputs.durationSeconds }),
+  };
+  return validateRunRecord(record);
 }

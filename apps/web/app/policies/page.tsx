@@ -25,10 +25,12 @@ export default function PoliciesPage() {
           people. {editors.length} of {roles.length} roles may change a file.
         </p>
         <p>
-          <strong className="font-medium text-foreground">Nothing enforces this.</strong>{' '}
-          Asking whether a role may do something tells you what the definitions say. It
-          opens no connection and constrains no tool, so it must never be mistaken for a
-          security boundary. Enforcement belongs to a tool layer that does not exist.
+          <strong className="font-medium text-foreground">One capability is now enforced.</strong>{' '}
+          The gate runner checks{' '}
+          <code className="font-mono text-xs">run_tests</code> before running anything, so a
+          role without it runs no command. Every other row is still only a declaration: it
+          opens no connection and constrains no tool, and must not be mistaken for a
+          security boundary.
         </p>
       </PageHeader>
 

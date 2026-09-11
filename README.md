@@ -35,10 +35,12 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
   configuration explorer, quality, evals, runs, adoption with a stack simulator, and
   docs. Tests assert the console can reach no repository file.
 
-**Nothing executes.** Gate execution, MCP connections, live runs, policy
-enforcement, and the website are **planned**. Defining a role starts no agent,
-planning a pipeline runs no command, and every gate this harness plans is `unrun`.
-No production maturity or live metrics are claimed.
+The harness can now **run the quality gates a project declares**, through
+`ax run --execute`, checking the acting role's capability first. That is the only
+thing it executes. Defining a role still starts no agent, no evaluation runs, no MCP
+tool is connected, and the console itself runs nothing. Reporting is the default:
+`ax run` without `--execute` changes nothing. No production maturity or live
+metrics are claimed.
 
 ## Architecture
 
@@ -181,7 +183,7 @@ explicitly allowlisted safe files.
 The **AX Engineering Console** in `apps/web` renders an explicit allowlisted
 catalog built from the real definitions, so the site cannot drift from the harness.
 It reads no repository file, runs no command, and records no execution, and tests
-enforce that. Navigation, architecture and workflow diagrams, the configuration
+enforce that. Gate execution lives in the CLI, not here. Navigation, architecture and workflow diagrams, the configuration
 explorer, and the adoption simulator arrive in later phases; demo runs and evals
 stay labelled as examples. See [the console](docs/web-console.md).
 

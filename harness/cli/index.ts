@@ -1,9 +1,13 @@
-import { dirname, resolve } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import { loadProject } from '../config/load.js';
 import { checkContextFiles } from '../core/context/resolve.js';
 import { resolveProject } from '../core/profiles/resolve.js';
 import { capabilityMatrix } from '../core/permissions/decide.js';
 import { initialStatuses, pipelinePassed, planQuality, summarize } from '../core/quality/plan.js';
+import { executeGates, EXECUTION_CAPABILITY } from '../core/execution/gates.js';
+import { buildRunRecord } from '../core/observability/run.js';
+import { can } from '../core/permissions/decide.js';
 import type { ConfigIssue } from '../config/validate.js';
 
 const usage = [
@@ -95,7 +99,7 @@ async function quality(argument: string | undefined): Promise<void> {
 
 function showPolicy(): void {
   console.log('Capability matrix declared in harness/policies/default/policy.json.');
-  console.log('These are definitions only. Nothing enforces them and no tool access is granted.');
+  console.log(`Only ${EXECUTION_CAPABILITY} is enforced, by the gate runner. The rest are declarations.`);
   console.log('');
   console.log(`${'capability'.padEnd(21)}${'risk'.padEnd(8)}${'tool'.padEnd(10)}roles`);
   for (const { capability, agents } of capabilityMatrix()) {
@@ -107,11 +111,89 @@ function showPolicy(): void {
   }
 }
 
+const DEFAULT_ROLE = 'qa-reviewer';
+
+function flagValue(args: string[], name: string): string | undefined {
+  const index = args.indexOf(name);
+  return index === -1 ? undefined : args[index + 1];
+}
+
+/**
+ * Runs, or merely reports, a project's declared gates.
+ *
+ * Nothing is executed without --execute. That default matters: every other command
+ * in this CLI is read-only, and this one should not quietly stop being so.
+ */
+async function runGates(args: string[]): Promise<void> {
+  const positional = args.filter(arg => !arg.startsWith('-'));
+  const roleFlag = flagValue(args, '--as');
+  const path = positional.find(arg => arg !== roleFlag);
+  const execute = args.includes('--execute');
+  const agent = roleFlag ?? DEFAULT_ROLE;
+
+  const outcome = await resolveFrom(path);
+  if (!outcome.ok) return report(outcome.issues);
+
+  const { resolved, root } = outcome;
+  const report_ = await executeGates(resolved, { root, agent, execute });
+
+  console.log(`Gates for ${resolved.profile.id}, acting as ${agent}.`);
+  if (report_.denied) {
+    console.log(`${agent} does not hold ${EXECUTION_CAPABILITY}, so nothing was run.`);
+  } else if (!execute) {
+    console.log('Reporting only. Pass --execute to run these commands.');
+  }
+  console.log('');
+  console.log(`${'stage'.padEnd(19)}${'outcome'.padEnd(13)}${'detail'.padEnd(22)}command`);
+  for (const gate of report_.gates) {
+    const detail = gate.refusal ?? `exit ${gate.exitCode ?? '?'}${gate.timedOut ? ', timed out' : ''}`;
+    console.log(`${gate.stage.padEnd(19)}${gate.outcome.padEnd(13)}${detail.padEnd(22)}${gate.command ?? ''}`.trimEnd());
+  }
+
+  const counts = { passed: 0, failed: 0, unavailable: 0, unrun: 0 };
+  for (const gate of report_.gates) counts[gate.outcome] += 1;
+  const passed = report_.gates.length > 0 && report_.gates.every(gate => gate.outcome === 'passed');
+  console.log('');
+  console.log(`Outcomes: ${counts.passed} passed, ${counts.failed} failed, ${counts.unavailable} unavailable, ${counts.unrun} unrun.`);
+  console.log(`Pipeline passed: ${passed}.`);
+
+  if (!report_.executed) {
+    console.log('No command was executed.');
+    return;
+  }
+
+  const id = `run-${new Date().toISOString().replace(/[:.]/g, '-').toLowerCase()}`;
+  const record = buildRunRecord({
+    id,
+    task: 'Run the declared quality gates.',
+    agent,
+    profile: resolved.profile.id,
+    tools: ['codebase'],
+    gates: report_.gates.map(gate => ({ stage: gate.stage, outcome: gate.outcome })),
+    durationSeconds: Math.round(report_.durationMs / 1000),
+    notes: [
+      'Recorded by the gate runner. Only commands from the resolved configuration were run.',
+      'Files read and changed are not tracked, and no tokens or cost were measured, so those stay absent.',
+    ],
+  });
+  if (!record.valid) return report(record.issues);
+
+  const directory = join(root, '.ax', 'runs');
+  await mkdir(directory, { recursive: true });
+  const file = join(directory, `${id}.json`);
+  await writeFile(file, `${JSON.stringify(record.record, null, 2)}
+`, 'utf8');
+  console.log(`Recorded: ${file}`);
+  if (!passed) process.exitCode = 1;
+}
+
 const [command, ...args] = process.argv.slice(2);
 if (command === 'validate' && args.length <= 1 && !args[0]?.startsWith('-')) {
   await validate(args[0]);
 } else if (command === 'quality' && args.length <= 1 && !args[0]?.startsWith('-')) {
   await quality(args[0]);
+} else if (command === 'run') {
+  await runGates(args);
 } else if (command === 'policy' && args.length === 0) {
   showPolicy();
 } else {

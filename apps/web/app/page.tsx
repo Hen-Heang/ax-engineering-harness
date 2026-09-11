@@ -139,8 +139,8 @@ export default function OverviewPage() {
       <section className="flex flex-col gap-3 rounded-lg border border-dashed px-4 py-4" aria-labelledby="limits">
         <h2 id="limits" className="text-sm font-semibold tracking-tight">What this does not do</h2>
         <ul className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-          <li>It runs no command and executes no agent. Every gate it plans is unrun.</li>
-          <li>It enforces no permission. The capability matrix is a declaration, not a boundary.</li>
+          <li>This console runs nothing. Gate execution lives in the command line tool.</li>
+          <li>It executes no agent and runs no evaluation, and connects to no tool.</li>
           <li>It reads no repository file. This console renders an allowlisted catalog only.</li>
           <li>It reports no measurement that was not taken, and labels every example as one.</li>
         </ul>
