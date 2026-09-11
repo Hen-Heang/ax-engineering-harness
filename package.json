@@ -10,6 +10,7 @@
     "node": ">=24 <27"
   },
   "scripts": {
+    "prepare": "npm run build --workspace @ax-harness/core",
     "build": "npm run build --workspace @ax-harness/core && npm run build --workspace @ax-harness/web",
     "typecheck": "npm run typecheck --workspace @ax-harness/core && npm run typecheck --workspace @ax-harness/web",
     "test": "npm run test --workspace @ax-harness/core && npm run test --workspace @ax-harness/web",

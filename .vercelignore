@@ -1,0 +1,13 @@
+# The deployment carries the harness and the console only. The preserved legacy
+# projects are never uploaded, which makes "the console publishes nothing from them"
+# true of the deployment artifact as well as of the rendered pages.
+AuthHub
+heang-api-center
+heang-dev-lab
+spring-boot-lab
+
+# Build output and local artefacts; the remote build produces its own.
+.next
+harness/dist
+test-results
+playwright-report
