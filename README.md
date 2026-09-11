@@ -4,7 +4,7 @@ A reusable engineering layer for reliable AI-assisted software development.
 
 Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-**Experimental / Learning Project — Phase 7 web console foundation.**
+**Experimental / Learning Project — Phase 8 console navigation and Overview.**
 
 This backend-first project explores how human direction, context, reusable
 procedures, controlled tools, verification, and evaluation improve AI-assisted
@@ -27,8 +27,9 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 - Quality pipeline planning that keeps passed, failed, unavailable and unrun
   distinct, a lifecycle with bounded retries, eval scoring, and handoff checking.
 - A local read-only CLI, typecheck, automated tests, and package build.
-- An `apps/web` console that renders an allowlisted catalog of the real definitions,
-  with tests asserting it can reach no repository file.
+- An `apps/web` console with persistent navigation, a mobile sheet, and an Overview
+  page whose status labels come from the definitions rather than a maintained list.
+  Tests assert the console can reach no repository file.
 
 **Nothing executes.** Gate execution, MCP connections, live runs, policy
 enforcement, and the website are **planned**. Defining a role starts no agent,
@@ -177,8 +178,8 @@ explorer, and the adoption simulator arrive in later phases; demo runs and evals
 stay labelled as examples. See [the console](docs/web-console.md).
 
 The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
-Next: console navigation and the Overview page, then the architecture and workflow
-visualizations and the building-block pages.
+Next: the architecture and workflow visualizations, then the building-block pages
+and the configuration explorer.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or

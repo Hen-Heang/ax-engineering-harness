@@ -146,3 +146,27 @@ export const catalogSummary = {
   counts: Object.fromEntries(catalogKinds.map(kind => [kind, catalog[kind].length])) as Record<CatalogKind, number>,
   total: catalogKinds.reduce((sum, kind) => sum + catalog[kind].length, 0),
 } as const;
+
+export interface StatusCount {
+  status: CatalogStatus | 'unspecified';
+  count: number;
+}
+
+const statusOrder: (CatalogStatus | 'unspecified')[] = ['implemented', 'experimental', 'planned', 'unspecified'];
+
+/**
+ * Counts entries by the status each definition declares.
+ *
+ * The console reads this rather than a hand-maintained list, so a definition whose
+ * status changes is reported differently without anyone remembering to edit a page.
+ */
+export function statusBreakdown(kind: CatalogKind): StatusCount[] {
+  const counts = new Map<CatalogStatus | 'unspecified', number>();
+  for (const item of catalog[kind]) {
+    const key = item.status ?? 'unspecified';
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return statusOrder
+    .filter(status => counts.has(status))
+    .map(status => ({ status, count: counts.get(status) ?? 0 }));
+}

@@ -1,9 +1,9 @@
 # AX Engineering Console (v1)
 
-Implemented: the `apps/web` workspace package, the allowlisted catalog, and a
-foundation page that renders it. Planned: navigation, architecture and workflow
-diagrams, the configuration explorer, building-block pages, and the adoption
-simulator.
+Implemented: the `apps/web` workspace package, the allowlisted catalog, the
+persistent console navigation, and the Overview page. Planned: architecture and
+workflow diagrams, the configuration explorer, building-block pages, and the
+adoption simulator.
 
 ```sh
 npm run dev --workspace @ax-harness/web    # local development
@@ -24,6 +24,9 @@ Verified at implementation time rather than assumed:
 | react, react-dom | 19.3.0 | satisfies Next's `^19.0.0` peer range |
 | tailwindcss, @tailwindcss/postcss | 4.3.3 | CSS-first configuration, no JS config file |
 | eslint | 9.39.5 | the version `eslint-config-next` itself depends on |
+| shadcn (radix-nova) | 4.21.0 | ships `shadcn/tailwind.css`, so it is a build dependency |
+| radix-ui | 1.6.7 | primitives behind Button, Badge, Card, Separator, Sheet |
+| lucide-react | 1.44.0 | icons |
 | eslint-config-next | 16.3.4 | tracks the Next version |
 | typescript | 5.9.3 | matches the harness package |
 
@@ -48,8 +51,8 @@ Two rules keep this safe, and **both are enforced by tests**:
 1. **No filesystem reach.** The catalog imports only pure data and pure functions.
    It never imports the project loader, the resolver, the context checker, or any
    detection helper, because those read from disk. A test scans every shipped file
-   under `app/` and `lib/` and fails if any of them references those APIs or a Node
-   filesystem module.
+   under `app/`, `lib/` and `components/` and fails if any of them references those
+   APIs or a Node filesystem module.
 2. **Source is rendered, not read.** What the console displays as a definition's
    source is serialized from the loaded object, not loaded from a path. There is no
    file path for a request to influence, so there is nothing to traverse.
@@ -78,16 +81,18 @@ definitions because that is how many the registries hold.
 
 ```text
 apps/web/
-  app/          App Router pages, layout, and Tailwind entry
-  lib/catalog.ts  the allowlist
-  lib/utils.ts    cn() for shadcn primitives
-  tests/        catalog and safety tests
+  app/                      App Router pages, layout, and Tailwind entry
+  components/ui/            shadcn primitives, generated
+  components/console/       the shell, the section list, and the status badge
+  lib/catalog.ts            the allowlist
+  lib/navigation.ts         the section model
+  lib/utils.ts              cn() for shadcn primitives
+  tests/                    catalog, safety and navigation tests
 ```
 
-Styling is Tailwind v4 with a small token set in `app/globals.css`. The full visual
-language, dark mode, shadcn primitives, and Lucide icons arrive with the navigation
-phase; React Flow arrives with the diagram phase. Dependencies are added in the
-phase that uses them rather than up front.
+Styling is Tailwind v4 with the shadcn token set in `app/globals.css`. React Flow
+arrives with the diagram phase. Dependencies are added in the phase that renders
+them rather than up front.
 
 ## Verification
 
@@ -95,5 +100,59 @@ phase that uses them rather than up front.
 console, runs both test suites, and builds the console. The harness checks are
 unchanged by the addition of this package.
 
-Browser testing, accessibility auditing, and responsive verification at desktop,
-tablet, 428px and narrower widths arrive with the QA phase.
+The browser pass recorded below covers this phase. Systematic accessibility
+auditing and automated responsive coverage across breakpoints arrive with the QA
+phase.
+
+## Navigation
+
+The sidebar lists every section the console is meant to have from the start, so the
+shape of the product is visible. **An item whose page does not exist yet carries no
+href**: it is rendered as text with a `Phase N` marker and a screen-reader-only
+"not yet available", never as a link to a placeholder. A test asserts that every
+item with an href resolves to a real `app/**/page.tsx`, so a link cannot be added
+before the page it points at.
+
+On screens below `lg` the sidebar is replaced by a sheet behind a menu button.
+
+## Deriving status from definitions
+
+The Overview shows each profile's status and a breakdown per building block. Both
+come from `statusBreakdown`, which counts the status **each definition declares**.
+Nothing on the page is a hand-maintained list, so a definition promoted from
+experimental to implemented changes the page without anyone editing it.
+
+## Browser verification
+
+Checked in Chrome against a production build. The extension's window resize did not
+take effect on this machine — the viewport stayed at its original width across three
+attempts — so the narrow layout was measured inside a 428px iframe, which gets its
+own viewport for media queries.
+
+At a 413px effective viewport:
+
+| Check | Result |
+| --- | --- |
+| Horizontal overflow, sheet closed | none |
+| Horizontal overflow, sheet open | none |
+| Desktop sidebar | hidden |
+| Mobile header and menu button | shown |
+| Menu button target | 44 x 44 px |
+| Sheet nav link height | 44 px minimum |
+| Escape key | closes the sheet |
+| Focus after closing | returned to the trigger |
+| Active link | `aria-current="page"` |
+| Navigation landmark | labelled "Console sections" |
+
+Two defects were found and fixed during this pass: the menu button was 32 x 32 px,
+below a comfortable touch target, and the unbuilt-section marker showed a bare
+number that read as an item count rather than a phase.
+
+Dark mode follows the viewer's system preference, applied before first paint by a
+small inline script because the shadcn tokens key off a `dark` class the server
+cannot know. The page stays readable in the light palette if that script does not
+run.
+
+This was a manual pass at one width on one browser. Systematic responsive and
+accessibility testing across breakpoints, including automated Playwright coverage,
+belongs to the QA phase.

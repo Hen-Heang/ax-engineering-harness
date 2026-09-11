@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { adapterIds, agentIds, evalIds, profileIds, runIds, skillIds } from '@ax-harness/core';
-import { capabilities, catalog, catalogKinds, catalogSummary, entriesOfKind, findEntry } from '../lib/catalog';
+import {
+  capabilities, catalog, catalogKinds, catalogSummary, entriesOfKind, findEntry, statusBreakdown,
+} from '../lib/catalog';
 
 const webRoot = fileURLToPath(new URL('../', import.meta.url));
 const statuses = new Set(['implemented', 'experimental', 'planned']);
@@ -78,7 +80,11 @@ test('an unknown kind or identifier reaches no data', () => {
 });
 
 test('the shipped console never imports anything that reads the filesystem', async () => {
-  const files = [...await sourceFiles(join(webRoot, 'app')), ...await sourceFiles(join(webRoot, 'lib'))];
+  const files = [
+    ...await sourceFiles(join(webRoot, 'app')),
+    ...await sourceFiles(join(webRoot, 'lib')),
+    ...await sourceFiles(join(webRoot, 'components')),
+  ];
   assert.ok(files.length > 0, 'expected source files to scan');
   for (const file of files) {
     const code = stripComments(await readFile(file, 'utf8'));
@@ -111,4 +117,22 @@ test('every run the console can display is an example, never a claimed execution
   for (const item of catalog.run) {
     assert.match(item.summary, /^example run/);
   }
+});
+
+test('status counts are derived from the declarations rather than maintained by hand', () => {
+  for (const kind of catalogKinds) {
+    const breakdown = statusBreakdown(kind);
+    const total = breakdown.reduce((sum, item) => sum + item.count, 0);
+    assert.equal(total, catalog[kind].length, `${kind} breakdown must account for every entry`);
+  }
+  // The profiles happen to be one implemented and three experimental today; the
+  // assertion is that the numbers come from the definitions, not that they are fixed.
+  const profiles = statusBreakdown('profile');
+  assert.deepEqual(
+    profiles,
+    [
+      { status: 'implemented', count: catalog.profile.filter(p => p.status === 'implemented').length },
+      { status: 'experimental', count: catalog.profile.filter(p => p.status === 'experimental').length },
+    ],
+  );
 });

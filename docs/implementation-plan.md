@@ -12,8 +12,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 5 | Quality, workflow, eval, run and handoff foundations | Implemented |
 | 6 | Next.js and full-stack profiles | Implemented |
 | 7 | Next.js web package and safe catalog | Implemented |
-| 8 | Overview and responsive console navigation | Next |
-| 9 | Architecture and workflow visualizations | Planned |
+| 8 | Overview and responsive console navigation | Implemented |
+| 9 | Architecture and workflow visualizations | Next |
 | 10 | Building-block pages and Config Explorer | Planned |
 | 11 | Quality, evals, example runs, adoption simulator, docs | Planned |
 | 12 | Integrated tests, accessibility, responsive QA | Planned |
@@ -152,14 +152,36 @@ bounded phases, inspecting existing code and verifying each change before the ne
 - Root `build`, `typecheck` and `test` now cover both packages, so `.ax/project.yaml`
   stays truthful about the whole repository.
 
-## Phase 8 acceptance criteria
+## Phase 8 decisions
 
-Add the persistent console navigation and the Overview page. The sidebar must
-become a sheet on mobile with no horizontal overflow, visible focus, and accessible
-tap targets. Use shadcn primitives rather than rebuilding them, and install only
-what is rendered. The Overview must state the Experimental status honestly, show the
-mental model, and distinguish Implemented, Experimental and Planned using the status
-each definition actually declares rather than a hand-maintained list.
+- The navigation lists every planned section from the start, but an item whose page
+  does not exist carries no href and is rendered as text with a phase marker. A test
+  asserts every href resolves to a real page file, so a link cannot precede a page.
+- Status labels are derived by `statusBreakdown` from the status each definition
+  declares, so no page holds a hand-maintained maturity list.
+- The shadcn generator's choices were corrected where they conflicted with this
+  repository: caret ranges were pinned to exact versions, the CLI was kept as a
+  dependency only because `globals.css` imports `shadcn/tailwind.css`, and `clsx`
+  and `tailwind-merge` were dropped once nothing imported them directly.
+- The generated components import `cn` from the published package rather than from
+  the `components.json` utils alias. Rewriting every generated component would have
+  to be repeated on each `shadcn add`, so `lib/utils.ts` re-exports from the same
+  package instead, leaving one implementation behind both import paths.
+- Dark mode follows the system preference through a pre-paint inline script, because
+  the shadcn tokens key off a class the server cannot know. A toggle can come later.
+- Responsive behavior was measured in a browser rather than assumed. The extension's
+  window resize had no effect here, so the narrow layout was measured inside a 428px
+  iframe, which has its own viewport for media queries.
+
+## Phase 9 acceptance criteria
+
+Add the architecture and workflow visualizations with React Flow, verifying its
+version at implementation time. Nodes must be non-editable in v1: this is a
+visualization, not a diagram editor. Both diagrams must be built from the real
+definitions rather than a hand-drawn graph, must use `fitView` and stay usable at
+narrow widths, and must offer an accessible text alternative so the content does not
+depend on the canvas. Clicking a node reveals what it is, why it exists, its
+responsibilities, inputs and outputs, and related roles, skills and tools.
 
 ## Verification
 
