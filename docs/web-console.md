@@ -275,3 +275,41 @@ Only Chromium is installed, so Firefox and WebKit are unexercised. The suite has
 run on Windows with Node 25.2.1; Linux, macOS and the recommended Node 24 runtime are
 untested. Manual assistive-technology testing has not been done, and nothing has been
 deployed.
+
+## Deploying
+
+The console has not been deployed. What follows is what a deployment would need, and
+was verified locally rather than assumed.
+
+`apps/web` imports `@ax-harness/core` from that package's compiled `dist`, which does
+not exist until the harness is built. A platform that runs `next build` in `apps/web`
+alone therefore fails with `Module not found: Can't resolve '@ax-harness/core'`. That
+was confirmed by deleting `harness/dist` and building the app on its own.
+
+The `vercel-build` script exists for that reason. Vercel runs it in preference to
+`build` when it is present, so a project whose root directory is `apps/web` works with
+no further configuration:
+
+```json
+"vercel-build": "npm run build --prefix ../.. --workspace @ax-harness/core && next build"
+```
+
+Verified from a clean state — both `harness/dist` and `apps/web/.next` removed — that
+the script compiles the harness and then produces a valid build.
+
+Other deployment facts, checked rather than assumed:
+
+| Item | State |
+| --- | --- |
+| `npm ci` from the committed lockfile | 701 packages, 0 vulnerabilities |
+| Node.js runtime | `engines` requires >= 24, which Vercel supports |
+| Playwright in devDependencies | no postinstall, so no browser download during install |
+| Runtime environment variables | none; no `process.env` in shipped code |
+| Rendering | every route prerendered; no request-time data access |
+
+### Before anything is published
+
+Distribution licensing is still undecided, and this repository preserves inherited
+tutorial-derived projects. That question belongs to the owner and should be settled
+before the site is public, even though the console publishes nothing from those trees
+and a test asserts it.

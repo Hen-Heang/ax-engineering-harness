@@ -56,7 +56,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run start -- --port ${port}`,
+    // Started directly rather than through npm: the extra wrapper process is not
+    // always cleaned up on Windows, which leaves a server holding Next's native
+    // binary and makes a later "npm ci" fail with EPERM.
+    command: `npx next start --port ${port}`,
     url: baseURL,
     reuseExistingServer: true,
     timeout: 120_000,
