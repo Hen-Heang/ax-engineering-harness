@@ -28,7 +28,7 @@ test('the navigation covers the sections the console is meant to have', () => {
       'MCP & tools', 'Policies',
       'Quality gates', 'Evals', 'Runs',
       'Projects',
-      'Docs',
+      'Config explorer', 'Docs',
     ],
   );
 });

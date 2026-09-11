@@ -27,6 +27,17 @@ async function sourceFiles(directory: string): Promise<string[]> {
   return found;
 }
 
+/**
+ * Drops type-only imports before scanning.
+ *
+ * TypeScript erases `import type` entirely, so it never reaches the bundle and
+ * cannot pull a filesystem module into the browser. Treating it as a runtime import
+ * would force types to be duplicated locally for no safety gain.
+ */
+function stripTypeImports(code: string): string {
+  return code.replace(/import\s+type\s[\s\S]*?from\s*['"][^'"]+['"]/g, '');
+}
+
 function importsOf(code: string): string[] {
   const specifiers: string[] = [];
   for (const match of code.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)) {
@@ -94,7 +105,7 @@ test('no client component can reach the harness package, even through another mo
     for (const reached of await reachableFrom(file)) {
       const reachedCode = await readFile(reached, 'utf8');
       assert.equal(
-        importsOf(reachedCode).includes(harnessPackage),
+        importsOf(stripTypeImports(reachedCode)).includes(harnessPackage),
         false,
         `client component ${relative(webRoot, file)} reaches ${harnessPackage} through ${relative(webRoot, reached)}`,
       );
@@ -107,12 +118,14 @@ test('the modules that do import the harness are server-only', async () => {
   const importers: string[] = [];
   for (const file of files) {
     const code = await readFile(file, 'utf8');
-    if (importsOf(code).includes(harnessPackage)) {
+    if (importsOf(stripTypeImports(code)).includes(harnessPackage)) {
       importers.push(relative(webRoot, file).replaceAll('\\', '/'));
       assert.equal(/^\s*['"]use client['"]/.test(code), false, `${file} imports the harness and must not be a client module`);
     }
   }
   // Keeping this list short and known is the point: the fewer modules that touch the
   // harness, the smaller the surface that has to stay on the server.
+  // lib/definitions.ts is deliberately absent: it takes only types from the harness,
+  // which are erased, so its single runtime dependency is the catalog.
   assert.deepEqual(importers.sort(), ['lib/catalog.ts', 'lib/graph.ts']);
 });

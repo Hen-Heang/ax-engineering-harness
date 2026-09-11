@@ -1,5 +1,5 @@
 import {
-  BookOpen, Boxes, FlaskConical, History, Layers, ListChecks, Network,
+  BookOpen, Boxes, FileJson, FlaskConical, History, Layers, ListChecks, Network,
   Plug, ShieldCheck, SquareCheckBig, Users, Waypoints,
   type LucideIcon,
 } from 'lucide-react';
@@ -39,16 +39,16 @@ export const navigation: NavSection[] = [
   {
     label: 'Building blocks',
     items: [
-      { label: 'Profiles', href: null, icon: Boxes, phase: 10 },
-      { label: 'Agents', href: null, icon: Users, phase: 10 },
-      { label: 'Skills', href: null, icon: ListChecks, phase: 10 },
+      { label: 'Profiles', href: '/profiles', icon: Boxes, phase: 10 },
+      { label: 'Agents', href: '/agents', icon: Users, phase: 10 },
+      { label: 'Skills', href: '/skills', icon: ListChecks, phase: 10 },
     ],
   },
   {
     label: 'Integrations',
     items: [
-      { label: 'MCP & tools', href: null, icon: Plug, phase: 10 },
-      { label: 'Policies', href: null, icon: ShieldCheck, phase: 10 },
+      { label: 'MCP & tools', href: '/tools', icon: Plug, phase: 10 },
+      { label: 'Policies', href: '/policies', icon: ShieldCheck, phase: 10 },
     ],
   },
   {
@@ -68,6 +68,7 @@ export const navigation: NavSection[] = [
   {
     label: 'Reference',
     items: [
+      { label: 'Config explorer', href: '/config', icon: FileJson, phase: 10 },
       { label: 'Docs', href: null, icon: BookOpen, phase: 11 },
     ],
   },

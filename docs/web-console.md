@@ -1,9 +1,9 @@
 # AX Engineering Console (v1)
 
 Implemented: the `apps/web` workspace package, the allowlisted catalog, the
-persistent console navigation, and the Overview page. Planned: architecture and
-workflow diagrams, the configuration explorer, building-block pages, and the
-adoption simulator.
+persistent navigation, the Overview page, the architecture and workflow diagrams,
+the building-block pages, and the configuration explorer. Planned: the quality,
+evals, runs, projects and docs pages, and the adoption simulator.
 
 ```sh
 npm run dev --workspace @ax-harness/web    # local development
@@ -156,3 +156,40 @@ run.
 This was a manual pass at one width on one browser. Systematic responsive and
 accessibility testing across breakpoints, including automated Playwright coverage,
 belongs to the QA phase.
+
+## Building-block pages
+
+Profiles, agents, skills, MCP and tools, and policies all render from the catalog.
+`lib/definitions.ts` turns a definition into labelled sections, so a page cannot
+describe a field the definition does not have, and a definition that gains a
+limitation shows it without anyone editing a page.
+
+Expansion on the list pages uses native `details`/`summary` rather than a scripted
+accordion, so it works with the keyboard, works before hydration, and ships no client
+JavaScript.
+
+## Config explorer
+
+`/config` presents the catalog as a tree, with one statically generated page per
+definition at `/config/<kind>/<id>`. The route parameters come from the catalog, so
+a route cannot exist for something the allowlist does not expose.
+
+**The tree is not a filesystem.** Every branch is a catalog kind and every leaf a
+definition already in the allowlist, so nothing in it can name a path on disk. The
+source shown is rendered from the loaded definition, never read from a file.
+
+## A layout bug only the browser could find
+
+At 428px the policies page scrolled sideways by 308px even though the capability
+table sat inside an `overflow-x-auto` container that was correctly clipping it.
+
+The cause was accessibility markup. Every cell carries an `sr-only` label, and
+Tailwind's `sr-only` is `position: absolute`. With no positioned ancestor inside the
+scroller, those 113 elements resolved their containing block to the initial one,
+escaped the scroller's clipping entirely, and extended the document to the table's
+full width. Neither `min-w-0`, `max-w-full`, nor `overflow-x: clip` on an ancestor
+made any difference, because the problem was not the ancestors.
+
+Adding `relative` to the scroll container fixed it: the labels are now contained by
+it and clipped with everything else. The container's `relative` is therefore
+load-bearing and commented as such, and all 113 labels are retained.

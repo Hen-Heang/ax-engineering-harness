@@ -14,8 +14,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 7 | Next.js web package and safe catalog | Implemented |
 | 8 | Overview and responsive console navigation | Implemented |
 | 9 | Architecture and workflow visualizations | Implemented |
-| 10 | Building-block pages and Config Explorer | Next |
-| 11 | Quality, evals, example runs, adoption simulator, docs | Planned |
+| 10 | Building-block pages and Config Explorer | Implemented |
+| 11 | Quality, evals, example runs, adoption simulator, docs | Next |
 | 12 | Integrated tests, accessibility, responsive QA | Planned |
 
 ## Phase 2 decisions
@@ -194,15 +194,32 @@ bounded phases, inspecting existing code and verifying each change before the ne
   imports transitively from every client component, and asserts that the only modules
   importing the harness are `lib/catalog.ts` and `lib/graph.ts`.
 
-## Phase 10 acceptance criteria
+## Phase 10 decisions
 
-Add the profiles, agents, skills, MCP/tools and policies pages, and the configuration
-explorer. Every page must render from the catalog rather than from prose, with status
-badges taken from each definition. The explorer must show a definition's real source
-and must reach nothing outside the allowlist; a file tree in the UI is a view of the
-catalog, never of the filesystem. The policies page must present the capability matrix
-as the definitions state it, including what is denied to every role. Navigation
-entries become links only as their pages land.
+- `lib/definitions.ts` turns a definition into labelled sections, so every page reads
+  the definition rather than restating it in prose. A definition that gains a
+  limitation shows it without anyone editing a page.
+- List pages expand with native `details`/`summary` rather than a scripted accordion,
+  so expansion works with the keyboard, works before hydration, and ships no client
+  JavaScript.
+- The config explorer is one statically generated page per definition, with route
+  parameters taken from the catalog, so a route cannot exist for something the
+  allowlist does not expose. The tree is a view of the catalog, never of a filesystem.
+- The boundary test now ignores type-only imports, because TypeScript erases them and
+  they cannot pull a filesystem module into the bundle. Treating them as runtime
+  imports would force types to be duplicated for no safety gain. With that correction
+  only two modules import the harness at runtime.
+- The navigation gained a Config explorer entry under Reference, and the navigation
+  test was updated to match the section list the console actually has.
+
+## Phase 11 acceptance criteria
+
+Add the quality gates, evals, runs, projects and docs pages. Gate results must keep
+passed, failed, unavailable and unrun distinct on screen as well as in the model, and
+no page may present a demo record as a real execution: every example must be labelled
+where it is displayed. The adoption simulator may run from static validated
+configuration, and must show which profile, roles, skills, tools, gates and policies a
+chosen stack would activate without implying that anything executes.
 
 ## Verification
 
