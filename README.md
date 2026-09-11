@@ -4,7 +4,7 @@ A reusable engineering layer for reliable AI-assisted software development.
 
 Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-**Experimental / Learning Project — Phase 6 Next.js and full-stack profiles.**
+**Experimental / Learning Project — Phase 7 web console foundation.**
 
 This backend-first project explores how human direction, context, reusable
 procedures, controlled tools, verification, and evaluation improve AI-assisted
@@ -27,6 +27,8 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 - Quality pipeline planning that keeps passed, failed, unavailable and unrun
   distinct, a lifecycle with bounded retries, eval scoring, and handoff checking.
 - A local read-only CLI, typecheck, automated tests, and package build.
+- An `apps/web` console that renders an allowlisted catalog of the real definitions,
+  with tests asserting it can reach no repository file.
 
 **Nothing executes.** Gate execution, MCP connections, live runs, policy
 enforcement, and the website are **planned**. Defining a role starts no agent,
@@ -57,7 +59,8 @@ npm ci
 npm run ax -- validate      # resolve and check a project declaration
 npm run ax -- quality       # plan the quality pipeline for a project
 npm run ax -- policy        # print the capability matrix
-npm run check               # typecheck, tests, build
+npm run check               # build, typecheck, lint, tests, console build
+npm run dev --workspace @ax-harness/web   # run the console locally
 ```
 
 `check` runs the new Harness typecheck, tests, and build, not legacy Java builds.
@@ -139,6 +142,7 @@ harness/quality/      Quality pipeline definition
 harness/workflow/     Lifecycle definition
 harness/evals/        Evaluation definitions
 harness/runs/         Example run records, never real executions
+apps/web/             AX Engineering Console, rendering the allowlisted catalog
 docs/                 Architecture, audit, configuration, building blocks, plan
 AGENTS.md             Shared instructions and preservation boundaries
 CLAUDE.md             Claude Code adapter surface
@@ -149,8 +153,8 @@ heang-dev-lab/        Preserved Maven project
 spring-boot-lab/      Preserved labs, including divergent AuthHub
 ```
 
-`apps/web`, integrations, and additional core capabilities arrive in their
-implementation phases. All existing project trees remain in place.
+Integrations and additional core capabilities arrive in their implementation
+phases. All existing project trees remain in place.
 
 ## Safety philosophy
 
@@ -165,13 +169,16 @@ explicitly allowlisted safe files.
 
 ## Web showcase and roadmap
 
-The planned **AX Engineering Console** in this repository's `apps/web` will offer
-architecture/workflow diagrams, Config Explorer, building-block documentation,
-permission matrices, and an adoption simulator. Demo runs/evals will be labeled.
+The **AX Engineering Console** in `apps/web` renders an explicit allowlisted
+catalog built from the real definitions, so the site cannot drift from the harness.
+It reads no repository file, runs no command, and records no execution, and tests
+enforce that. Navigation, architecture and workflow diagrams, the configuration
+explorer, and the adoption simulator arrive in later phases; demo runs and evals
+stay labelled as examples. See [the console](docs/web-console.md).
 
 The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
-Next: the `apps/web` console foundation and its safe public catalog, then the
-building-block pages and responsive verification.
+Next: console navigation and the Overview page, then the architecture and workflow
+visualizations and the building-block pages.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or

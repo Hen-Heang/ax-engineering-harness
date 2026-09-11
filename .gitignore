@@ -26,6 +26,7 @@ logs/
 node_modules/
 dist/
 .next/
+next-env.d.ts
 coverage/
 playwright-report/
 test-results/

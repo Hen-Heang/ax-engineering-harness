@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/*
+ * Minimal token set for the console foundation. The full visual language, dark
+ * mode, and shadcn primitives arrive with the navigation phase.
+ */
+@theme {
+  --color-surface: oklch(99% 0 0);
+  --color-surface-raised: oklch(97.5% 0 0);
+  --color-border-subtle: oklch(90% 0 0);
+  --color-ink: oklch(22% 0 0);
+  --color-ink-muted: oklch(48% 0 0);
+  --color-accent: oklch(52% 0.13 250);
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-surface: oklch(17% 0 0);
+    --color-surface-raised: oklch(21% 0 0);
+    --color-border-subtle: oklch(30% 0 0);
+    --color-ink: oklch(94% 0 0);
+    --color-ink-muted: oklch(68% 0 0);
+    --color-accent: oklch(72% 0.12 250);
+  }
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}

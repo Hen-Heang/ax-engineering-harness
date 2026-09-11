@@ -9,6 +9,7 @@ context:
   architecture: docs/architecture.md
 commands:
   build: npm run build
+  lint: npm run lint
   typecheck: npm run typecheck
   test: npm test
   security: npm audit --omit=dev
@@ -30,7 +31,7 @@ permissions:
   secrets_access: false
 quality:
   build: true
-  lint: false
+  lint: true
   typecheck: true
   tests: true
   integration_tests: false

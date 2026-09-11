@@ -11,8 +11,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 4 | Agents, procedural skills, policies, vendor adapters | Implemented |
 | 5 | Quality, workflow, eval, run and handoff foundations | Implemented |
 | 6 | Next.js and full-stack profiles | Implemented |
-| 7 | Next.js web package and safe catalog | Next |
-| 8 | Overview and responsive console navigation | Planned |
+| 7 | Next.js web package and safe catalog | Implemented |
+| 8 | Overview and responsive console navigation | Next |
 | 9 | Architecture and workflow visualizations | Planned |
 | 10 | Building-block pages and Config Explorer | Planned |
 | 11 | Quality, evals, example runs, adoption simulator, docs | Planned |
@@ -128,16 +128,38 @@ bounded phases, inspecting existing code and verifying each change before the ne
 - Determining affected areas decides which roles are involved. It starts nothing,
   and no parallel agent execution is implied or provided.
 
-## Phase 7 acceptance criteria
+## Phase 7 decisions
 
-Create `apps/web` as a second workspace package with Next.js, TypeScript, Tailwind
-and shadcn/ui primitives. Verify compatible stable versions at implementation time
-rather than assuming them. The site must render from an explicit allowlisted catalog
-built from the real profile, role, skill, policy, pipeline and eval definitions, so
-documentation cannot drift from behavior. The browser must never receive arbitrary
-filesystem or server capability, and no local run artifact, legacy project file, or
-credential may be published. Harness checks must keep passing unchanged alongside
-the new package's own lint, typecheck, test and build.
+- Versions were checked against the registry at implementation time. Two published
+  latest versions were deliberately not taken: TypeScript 7.0.2, because the harness
+  is pinned to 5.9.3 and two compilers in one workspace make differences hard to
+  attribute; and ESLint 10.10.0, because `eslint-config-next@16.3.4` depends on
+  ESLint 9.39.5 directly, and installing 10 produced two copies with plugins loaded
+  against a different one than the runner.
+- `apps/web/lib/catalog.ts` is the allowlist. A definition not turned into an entry
+  there cannot reach the browser, and the catalog imports only pure data and pure
+  functions, never the loader, resolver, context checker, or detection helpers.
+- Displayed source is serialized from the loaded definition rather than read from a
+  path, so there is no file path for a request to influence.
+- A test scans every shipped file under `app/` and `lib/` for filesystem APIs, so
+  the boundary is enforced rather than merely documented. Comments are stripped
+  before scanning, so prose may discuss the forbidden APIs while code may not.
+- Dependencies are added in the phase that uses them. shadcn primitives, Lucide and
+  React Flow are not installed yet, because nothing yet renders them.
+- The repository's own declaration now enables the lint gate and declares
+  `npm run lint`, because the console brings the repository its first linter. Three
+  harness tests were updated to match the declaration rather than the reverse.
+- Root `build`, `typecheck` and `test` now cover both packages, so `.ax/project.yaml`
+  stays truthful about the whole repository.
+
+## Phase 8 acceptance criteria
+
+Add the persistent console navigation and the Overview page. The sidebar must
+become a sheet on mobile with no horizontal overflow, visible focus, and accessible
+tap targets. Use shadcn primitives rather than rebuilding them, and install only
+what is rendered. The Overview must state the Experimental status honestly, show the
+mental model, and distinguish Implemented, Experimental and Planned using the status
+each definition actually declares rather than a hand-maintained list.
 
 ## Verification
 
