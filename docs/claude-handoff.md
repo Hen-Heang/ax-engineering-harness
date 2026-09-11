@@ -7,10 +7,11 @@ not a verbatim chat export. Read the referenced repository files for exact code.
 > **Superseded.** This records the transfer as it stood on 2026-09-11, when phase 2
 > was the latest work. Every phase through 12 has since been implemented, so the
 > "Resume here" steps below are history rather than instructions. The current state
-> is in `docs/phase-12-handoff.md`, and the branch was renamed from
-> `ax-harness/phase-2-foundation` to `ax-harness/harness-and-console` once it
-> carried more than the configuration foundation. The rest of this document —
-> the non-negotiable requirements, the positioning, and the brief — still applies.
+> is in `docs/phase-12-handoff.md`, and all of the work now lives on `main`. The
+> branch named below was renamed once it carried more than the configuration
+> foundation, and was deleted after merging, so `main` is where to start. The rest
+> of this document — the non-negotiable requirements, the positioning, and the
+> brief — still applies.
 
 ## Resume here
 
@@ -31,7 +32,8 @@ that inspection remains known to be running.
 - Existing repository: https://github.com/Hen-Heang/ax-engineering-harness
 - Local checkout: C:\Practice\API\ax-engineering-harness
 - Shell: PowerShell; timezone Asia/Seoul.
-- Branch: ax-harness/phase-2-foundation
+- Branch: ax-harness/phase-2-foundation (as it was then; the work is now on main
+  and that branch no longer exists)
 - Latest implementation commit: 7ab0e2f — feat(harness): add phase 2 configuration foundation
 - Previous baseline: 541112b
 - Nothing was pushed. No PR or deployment was created.
