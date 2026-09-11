@@ -1,0 +1,21 @@
+{
+  "name": "ax-engineering-harness",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "harness",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=24 <27"
+  },
+  "scripts": {
+    "build": "npm run build --workspace @ax-harness/core && npm run build --workspace @ax-harness/web",
+    "typecheck": "npm run typecheck --workspace @ax-harness/core && npm run typecheck --workspace @ax-harness/web",
+    "test": "npm run test --workspace @ax-harness/core && npm run test --workspace @ax-harness/web",
+    "lint": "npm run lint --workspace @ax-harness/web",
+    "ax": "tsx harness/cli/index.ts",
+    "check": "npm run build --workspace @ax-harness/core && npm run typecheck && npm run lint && npm test && npm run build --workspace @ax-harness/web && npm run e2e",
+    "e2e": "npm run e2e --workspace @ax-harness/web"
+  }
+}

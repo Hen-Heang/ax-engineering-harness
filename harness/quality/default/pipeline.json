@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "id": "default",
+  "description": "Ordered quality pipeline. Cheap and broad checks run first so that an expensive stage is only reached once the earlier ones have passed.",
+  "stages": [
+    {
+      "id": "build",
+      "title": "Build",
+      "kind": "executable",
+      "quality": "build",
+      "command": "build",
+      "description": "The project compiles or packages. Nothing later is meaningful if this fails."
+    },
+    {
+      "id": "lint",
+      "title": "Lint",
+      "kind": "executable",
+      "quality": "lint",
+      "command": "lint",
+      "description": "Style and correctness rules the project has chosen to enforce."
+    },
+    {
+      "id": "typecheck",
+      "title": "Typecheck",
+      "kind": "executable",
+      "quality": "typecheck",
+      "command": "typecheck",
+      "description": "Static types agree across the change."
+    },
+    {
+      "id": "unit_tests",
+      "title": "Unit tests",
+      "kind": "executable",
+      "quality": "tests",
+      "command": "test",
+      "description": "Fast tests that do not need external services."
+    },
+    {
+      "id": "integration_tests",
+      "title": "Integration tests",
+      "kind": "executable",
+      "quality": "integration_tests",
+      "command": "integration_test",
+      "description": "Tests that exercise real collaborators, and may need a database or network."
+    },
+    {
+      "id": "security",
+      "title": "Security",
+      "kind": "executable",
+      "quality": "security",
+      "command": "security",
+      "description": "Automated dependency and configuration checks. Not a substitute for security review."
+    },
+    {
+      "id": "review",
+      "title": "Independent review",
+      "kind": "human",
+      "quality": "review",
+      "description": "A reviewer who did not write the change assesses it. Cannot be disabled."
+    },
+    {
+      "id": "eval",
+      "title": "Agent evaluation",
+      "kind": "eval",
+      "quality": "eval",
+      "description": "Assesses how the agent worked, which application tests cannot measure."
+    },
+    {
+      "id": "human_approval",
+      "title": "Human approval",
+      "kind": "human",
+      "quality": "human_approval",
+      "description": "A person accepts the change. Cannot be disabled."
+    }
+  ]
+}

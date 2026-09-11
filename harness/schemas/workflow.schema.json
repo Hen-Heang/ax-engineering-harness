@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/workflow/v1",
+  "title": "WorkflowDefinition",
+  "description": "AX Harness v1 lifecycle. Declares the states of an engineering task, which roles own each state, and which transitions are permitted. Nothing advances a state; no runner exists.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "description", "initial", "states"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/definitions/identifier" },
+    "description": { "$ref": "#/definitions/text" },
+    "initial": { "$ref": "#/definitions/identifier", "description": "Must name a declared state." },
+    "states": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 32,
+      "items": { "$ref": "#/definitions/state" }
+    }
+  },
+  "definitions": {
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "description", "agents", "next"],
+      "properties": {
+        "id": { "$ref": "#/definitions/identifier" },
+        "title": { "$ref": "#/definitions/line" },
+        "description": { "$ref": "#/definitions/text" },
+        "agents": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": { "$ref": "#/definitions/identifier" },
+          "description": "Roles that may own this state. Empty means a human, or a capability that does not exist yet."
+        },
+        "next": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": { "$ref": "#/definitions/identifier" },
+          "description": "Permitted forward transitions. Empty marks a terminal state."
+        },
+        "onFailure": {
+          "$ref": "#/definitions/identifier",
+          "description": "State to return to when this one fails. Taking it counts as a retry and is bounded by the project's declared retry limit."
+        }
+      }
+    },
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+    "line": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" }
+  }
+}

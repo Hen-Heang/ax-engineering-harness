@@ -21,3 +21,17 @@ bin/
 logs/
 *.log
 .DS_Store
+
+# AX Harness tooling and future web application
+node_modules/
+dist/
+.next/
+next-env.d.ts
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.ax/runs/

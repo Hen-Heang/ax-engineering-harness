@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "id": "default",
+  "description": "How a request moves through the harness, from a person asking for something to a reviewed change and what the harness learns from it.",
+  "nodes": [
+    {
+      "id": "human",
+      "title": "Human",
+      "kind": "actor",
+      "row": 0,
+      "column": 0,
+      "summary": "The person who wants something changed and who remains accountable for the result.",
+      "why": "An agent has no stake in the outcome. Direction and acceptance stay with a person.",
+      "responsibilities": [
+        "State the requirement and the constraints that matter.",
+        "Approve high-impact actions.",
+        "Accept or reject the finished change."
+      ],
+      "inputs": ["A need, a defect report, or a question about the system."],
+      "outputs": ["A stated requirement.", "Approval decisions."]
+    },
+    {
+      "id": "request",
+      "title": "Request",
+      "kind": "artifact",
+      "row": 1,
+      "column": 0,
+      "summary": "The requirement as written down, before any interpretation.",
+      "why": "Keeping the original wording separate from the plan makes it possible to check later whether the delivered change is what was actually asked for.",
+      "responsibilities": ["Carry the requirement without reinterpreting it."],
+      "inputs": ["What the person said."],
+      "outputs": ["A requirement the harness can load context against."]
+    },
+    {
+      "id": "core",
+      "title": "AX Harness Core",
+      "kind": "core",
+      "row": 2,
+      "column": 0,
+      "summary": "The vendor-neutral layer that loads context, decides what is permitted, and sequences the work.",
+      "why": "The reusable parts belong in one place that depends on no particular stack and no particular vendor.",
+      "responsibilities": [
+        "Resolve the project declaration against its profile.",
+        "Assemble the context a role needs.",
+        "Apply the lifecycle and the capability policy."
+      ],
+      "inputs": ["A request.", "The project declaration and its profile."],
+      "outputs": ["A resolved configuration and the context, policy and lifecycle that govern the work."]
+    },
+    {
+      "id": "context",
+      "title": "Context",
+      "kind": "core",
+      "row": 3,
+      "column": 0,
+      "summary": "The instructions, architecture notes and code a role needs in order to work from evidence.",
+      "why": "An agent without the project's own context invents conventions instead of following them.",
+      "responsibilities": [
+        "Resolve declared context references and verify they stay inside the project.",
+        "Provide the profile's architecture assumptions to whoever is working."
+      ],
+      "inputs": ["The declared context paths.", "The resolved profile."],
+      "outputs": ["Verified references and the assumptions a change must preserve."],
+      "skills": ["investigate"],
+      "capabilities": ["read_code", "read_docs"]
+    },
+    {
+      "id": "workflow",
+      "title": "Workflow",
+      "kind": "core",
+      "row": 3,
+      "column": 1,
+      "summary": "The lifecycle states a task moves through and the transitions that are permitted between them.",
+      "why": "Narrow transitions stop a task reaching review without having been verified, and bound how often a failure can be retried.",
+      "responsibilities": [
+        "Permit only declared transitions.",
+        "Return a failure to the state that can fix it.",
+        "Bound retries by the project's declared limit."
+      ],
+      "inputs": ["The current state and the retry budget."],
+      "outputs": ["The permitted next states, or a stop."],
+      "reference": { "kind": "workflow", "id": "default" }
+    },
+    {
+      "id": "policy",
+      "title": "Policy",
+      "kind": "core",
+      "row": 3,
+      "column": 2,
+      "summary": "The capability vocabulary that says what each role may do, and what nobody may do.",
+      "why": "Controlled capability is the point. Reads are broad, writes are narrow and reviewed, and the high-impact actions belong to people.",
+      "responsibilities": [
+        "Define the capabilities a role may hold.",
+        "Deny database writes, default-branch pushes, force pushes, deployment and secrets to every role.",
+        "Mark the actions that require human approval."
+      ],
+      "inputs": ["A role and a capability."],
+      "outputs": ["What the definitions say is permitted. Enforcement is not implemented."],
+      "reference": { "kind": "policy", "id": "default" }
+    },
+    {
+      "id": "planner",
+      "title": "Planner",
+      "kind": "agent",
+      "row": 4,
+      "column": 0,
+      "summary": "The role that turns findings into a bounded, ordered, verifiable plan.",
+      "why": "Deciding scope before editing is what keeps a change reviewable and stops unrelated work creeping in.",
+      "responsibilities": [
+        "Own scope, including what is explicitly out of scope.",
+        "Sequence work so each step can be verified alone.",
+        "Decide which roles the work actually needs."
+      ],
+      "inputs": ["Investigation findings and the requirement."],
+      "outputs": ["An ordered plan with per-step verification and approval points."],
+      "agents": ["planner"],
+      "skills": ["plan-feature"],
+      "reference": { "kind": "agent", "id": "planner" }
+    },
+    {
+      "id": "backend",
+      "title": "Backend Engineer",
+      "kind": "agent",
+      "row": 5,
+      "column": 0,
+      "summary": "The role that implements server-side changes and the tests that cover them.",
+      "why": "Implementation and its tests belong to the same owner, so behaviour and evidence arrive together.",
+      "responsibilities": [
+        "Implement the planned backend change on a branch.",
+        "Keep controller, service and data-access responsibilities separated.",
+        "Report real gate outcomes, including failures."
+      ],
+      "inputs": ["An approved plan and a working branch."],
+      "outputs": ["A changed-file list, tests, and verification results."],
+      "agents": ["backend-engineer"],
+      "skills": ["implement-feature", "debug", "test"],
+      "capabilities": ["edit_worktree", "run_tests", "database_metadata"],
+      "reference": { "kind": "agent", "id": "backend-engineer" }
+    },
+    {
+      "id": "frontend",
+      "title": "Frontend Engineer",
+      "kind": "agent",
+      "row": 5,
+      "column": 1,
+      "summary": "The role that implements client-side changes, keeping them typed, accessible and responsive.",
+      "why": "Accessibility and responsive behaviour are cheap while the change is being written and expensive to retrofit.",
+      "responsibilities": [
+        "Implement the planned frontend change on a branch.",
+        "Own the server and client component boundary for that code.",
+        "Adapt to the API contract rather than changing it unilaterally."
+      ],
+      "inputs": ["An approved plan and the API contract."],
+      "outputs": ["A changed-file list, tests, and verification results."],
+      "agents": ["frontend-engineer"],
+      "skills": ["implement-feature", "debug", "test"],
+      "capabilities": ["edit_worktree", "run_tests"],
+      "reference": { "kind": "agent", "id": "frontend-engineer" }
+    },
+    {
+      "id": "specialists",
+      "title": "Specialist reviewers",
+      "kind": "agent",
+      "row": 5,
+      "column": 2,
+      "summary": "The database, security, QA and integration roles, none of which may edit the code they judge.",
+      "why": "A reviewer who can quietly fix what they find stops being a reviewer. Separating judgement from editing is what makes the verdict worth having.",
+      "responsibilities": [
+        "Judge schema, security, gate results and cross-layer agreement.",
+        "Report findings rather than repairing them.",
+        "Escalate anything that needs a human decision."
+      ],
+      "inputs": ["A diff, the gate results, and the relevant contracts."],
+      "outputs": ["Findings ordered by severity, and an explicit verdict."],
+      "agents": ["database-reviewer", "security-reviewer", "qa-reviewer", "integration-reviewer"],
+      "skills": ["sql-review", "security-review", "backend-review", "frontend-review", "test"],
+      "capabilities": ["read_code", "database_metadata", "comment_issue_or_pr"]
+    },
+    {
+      "id": "tools",
+      "title": "MCP and tools",
+      "kind": "tools",
+      "row": 6,
+      "column": 0,
+      "summary": "The interface through which a role reaches anything outside its own reasoning.",
+      "why": "MCP is a connection standard, not business logic. Keeping capability behind one interface is what makes it possible to bound it at all.",
+      "responsibilities": [
+        "Expose the codebase, documentation, repository metadata and database metadata.",
+        "Carry out only what the policy permits for the calling role.",
+        "Leave a record of what was reached."
+      ],
+      "inputs": ["A capability request from a role."],
+      "outputs": ["The result of a permitted operation. Not implemented: no connection exists yet."],
+      "capabilities": [
+        "read_code", "read_docs", "github_read", "database_metadata",
+        "edit_worktree", "run_tests", "create_branch", "comment_issue_or_pr", "create_pull_request"
+      ]
+    },
+    {
+      "id": "project",
+      "title": "Project",
+      "kind": "artifact",
+      "row": 7,
+      "column": 0,
+      "summary": "The repository being changed, with its own declaration, profile and commands.",
+      "why": "The harness holds no project-specific settings. Everything particular to a codebase lives with that codebase.",
+      "responsibilities": [
+        "Declare its profile, context, commands, tools, permissions, gates and limits.",
+        "Own the commands that its gates actually run."
+      ],
+      "inputs": ["Changes proposed by a role."],
+      "outputs": ["A working tree whose gates can be planned and run."]
+    },
+    {
+      "id": "quality",
+      "title": "Quality gates",
+      "kind": "quality",
+      "row": 8,
+      "column": 0,
+      "summary": "The ordered checks a change must pass, each reporting passed, failed, unavailable or unrun.",
+      "why": "A gate nobody could run and a gate nobody did run have not passed. Keeping those distinct is what stops a pipeline flattering itself.",
+      "responsibilities": [
+        "Plan the applicable gates for the resolved project.",
+        "Keep passed, failed, unavailable and unrun distinct.",
+        "Refuse to report success for a pipeline that gates nothing."
+      ],
+      "inputs": ["A resolved configuration and a change."],
+      "outputs": ["A per-gate outcome with its evidence."],
+      "reference": { "kind": "pipeline", "id": "default" }
+    },
+    {
+      "id": "evals",
+      "title": "Evals",
+      "kind": "quality",
+      "row": 9,
+      "column": 0,
+      "summary": "Assessment of how the agent worked, which application tests cannot measure.",
+      "why": "Tests say whether the software is right. They say nothing about whether the agent found the correct owner, preserved the rules, or stayed inside its permissions.",
+      "responsibilities": [
+        "Score behaviour against declared expectations.",
+        "Treat a missing criterion as zero rather than ignoring it.",
+        "Fail outright on forbidden behaviour, however high the score."
+      ],
+      "inputs": ["The task, the diff, and the observed behaviour."],
+      "outputs": ["A weighted score and a pass or fail. No evaluation has been run."],
+      "reference": { "kind": "eval", "id": "cancellation-support" }
+    },
+    {
+      "id": "review",
+      "title": "Human review",
+      "kind": "review",
+      "row": 10,
+      "column": 0,
+      "summary": "A person deciding whether the change should exist, not merely whether it compiles.",
+      "why": "Gates and evals narrow what reaches a person. They do not replace the judgement about whether this was the right change.",
+      "responsibilities": [
+        "Accept or reject the change.",
+        "Approve the high-impact actions policy reserves for a human."
+      ],
+      "inputs": ["The change, the gate outcomes, and the eval result."],
+      "outputs": ["Approval, or a rejection that returns to planning."]
+    },
+    {
+      "id": "pull-request",
+      "title": "Pull request",
+      "kind": "artifact",
+      "row": 11,
+      "column": 0,
+      "summary": "The proposal others review, and the record of what was decided.",
+      "why": "Changes reach the default branch through review. Nothing in the harness may push there directly.",
+      "responsibilities": [
+        "Carry the change, its rationale and its evidence.",
+        "Collect continuous integration results."
+      ],
+      "inputs": ["An approved change on a branch."],
+      "outputs": ["A reviewed change, and what the harness should learn from it."]
+    }
+  ],
+  "edges": [
+    { "from": "human", "to": "request", "kind": "flow", "label": "states a requirement" },
+    { "from": "request", "to": "core", "kind": "flow" },
+    { "from": "core", "to": "context", "kind": "flow" },
+    { "from": "core", "to": "workflow", "kind": "flow" },
+    { "from": "core", "to": "policy", "kind": "flow" },
+    { "from": "context", "to": "planner", "kind": "flow" },
+    { "from": "workflow", "to": "planner", "kind": "flow" },
+    { "from": "policy", "to": "planner", "kind": "flow" },
+    { "from": "planner", "to": "backend", "kind": "flow" },
+    { "from": "planner", "to": "frontend", "kind": "flow" },
+    { "from": "planner", "to": "specialists", "kind": "flow" },
+    { "from": "backend", "to": "tools", "kind": "flow" },
+    { "from": "frontend", "to": "tools", "kind": "flow" },
+    { "from": "specialists", "to": "tools", "kind": "flow" },
+    { "from": "tools", "to": "project", "kind": "flow" },
+    { "from": "project", "to": "quality", "kind": "flow" },
+    { "from": "quality", "to": "evals", "kind": "flow" },
+    { "from": "evals", "to": "review", "kind": "flow" },
+    { "from": "review", "to": "pull-request", "kind": "flow", "label": "approved" },
+    { "from": "quality", "to": "backend", "kind": "failure", "label": "gate failed" },
+    { "from": "review", "to": "planner", "kind": "failure", "label": "rejected" },
+    { "from": "pull-request", "to": "core", "kind": "feedback", "label": "improves instructions" }
+  ]
+}

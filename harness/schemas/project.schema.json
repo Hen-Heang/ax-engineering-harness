@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/project/v1",
+  "title": "ProjectConfig",
+  "description": "AX Harness v1 project declaration. Validation never executes commands or grants capabilities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "project", "context", "commands", "tools", "permissions", "quality", "limits"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "mode", "profile"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+        "mode": { "const": "single-repo", "description": "Multi-repository execution is planned, not implemented." },
+        "profile": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "description": "Must name a profile in the built-in registry. Resolution rejects unknown identifiers." },
+        "build_system": { "enum": ["maven", "gradle", "node"], "description": "Optional explicit selection. Required only when several build manifests make detection ambiguous." }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "architecture": { "$ref": "#/definitions/contextPath" },
+        "domain": { "$ref": "#/definitions/contextPath" },
+        "database": { "$ref": "#/definitions/contextPath" }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "build": { "$ref": "#/definitions/command" },
+        "lint": { "$ref": "#/definitions/command" },
+        "typecheck": { "$ref": "#/definitions/command" },
+        "test": { "$ref": "#/definitions/command" },
+        "integration_test": { "$ref": "#/definitions/command" },
+        "security": { "$ref": "#/definitions/command" }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codebase", "docs", "github", "database"],
+      "properties": {
+        "codebase": { "$ref": "#/definitions/tool" },
+        "docs": { "$ref": "#/definitions/tool" },
+        "github": { "$ref": "#/definitions/tool" },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "mode"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "mode": { "const": "metadata-only" }
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direct_main_push", "force_push", "production_deploy", "database_write", "secrets_access"],
+      "properties": {
+        "direct_main_push": { "const": false },
+        "force_push": { "const": false },
+        "production_deploy": { "const": false },
+        "database_write": { "const": false },
+        "secrets_access": { "const": false }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["build", "lint", "typecheck", "tests", "integration_tests", "security", "review", "eval", "human_approval"],
+      "properties": {
+        "build": { "type": "boolean" },
+        "lint": { "type": "boolean" },
+        "typecheck": { "type": "boolean" },
+        "tests": { "type": "boolean" },
+        "integration_tests": { "type": "boolean" },
+        "security": { "type": "boolean" },
+        "review": { "const": true },
+        "eval": { "type": "boolean" },
+        "human_approval": { "const": true }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_retries", "max_duration_seconds"],
+      "properties": {
+        "max_retries": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "max_duration_seconds": { "type": "integer", "minimum": 1, "maximum": 3600 }
+      }
+    }
+  },
+  "definitions": {
+    "contextPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[\\\\:\\u0000-\\u001f]).+\\.md$",
+      "description": "Relative Markdown path, using forward slashes. Parent traversal and absolute paths are forbidden. File containment is verified separately."
+    },
+    "command": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$",
+      "description": "Opaque single-line command declaration; never evaluated by the validator."
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": { "enabled": { "type": "boolean" } }
+    }
+  }
+}

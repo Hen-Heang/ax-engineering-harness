@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "sql-review",
+  "name": "SQL review",
+  "status": "experimental",
+  "purpose": "Review schema and query changes for correctness, safety, and performance, using metadata only and never writing to a database.",
+  "prerequisites": [
+    "The proposed schema or query change.",
+    "Metadata-only access to the relevant schema."
+  ],
+  "steps": [
+    "Check column types, nullability, defaults, and constraints against the domain rules.",
+    "Check that queries are parameterized and never assembled by string concatenation.",
+    "Check indexes against the query shapes that will actually run.",
+    "Check transaction scope, isolation, and locking for multi-statement work.",
+    "Check that a migration is reversible, or state plainly that it is not.",
+    "Check what happens to existing rows, including rows that violate a new constraint."
+  ],
+  "capabilities": ["read_code", "database_metadata"],
+  "outputs": [
+    "Findings citing the statement or migration in question.",
+    "An explicit note when a migration is destructive or irreversible."
+  ],
+  "verification": [
+    "Index claims reference the query they are meant to serve.",
+    "Data-loss risk is stated directly rather than implied."
+  ],
+  "escalation": [
+    "The change would drop or rewrite existing data; require human approval.",
+    "Reviewing properly would need row data rather than metadata; stop and say so."
+  ]
+}

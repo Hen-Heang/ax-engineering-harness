@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/pipeline/v1",
+  "title": "PipelineDefinition",
+  "description": "AX Harness v1 quality pipeline. Declares the ordered stages and which project quality flag and command each stage reads. Planning a pipeline never runs a stage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "description", "stages"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/definitions/identifier" },
+    "description": { "$ref": "#/definitions/text" },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "$ref": "#/definitions/stage" },
+      "description": "Ordered. A later stage is only meaningful once earlier ones have passed."
+    }
+  },
+  "definitions": {
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "kind", "quality", "description"],
+      "properties": {
+        "id": { "$ref": "#/definitions/identifier" },
+        "title": { "$ref": "#/definitions/line" },
+        "kind": {
+          "enum": ["executable", "eval", "human"],
+          "description": "executable runs a declared command; eval assesses agent behavior; human requires a person."
+        },
+        "quality": {
+          "enum": ["build", "lint", "typecheck", "tests", "integration_tests", "security", "review", "eval", "human_approval"],
+          "description": "Project quality flag that decides whether this stage applies."
+        },
+        "command": {
+          "enum": ["build", "lint", "typecheck", "test", "integration_test", "security"],
+          "description": "Resolved command slot. Required for executable stages and forbidden otherwise."
+        },
+        "description": { "$ref": "#/definitions/text" }
+      }
+    },
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+    "line": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" }
+  }
+}

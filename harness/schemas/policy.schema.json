@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/policy/v1",
+  "title": "PolicyDefinition",
+  "description": "AX Harness v1 capability vocabulary. A policy states which capabilities exist, which tool each needs, which require human approval, and which are denied to every agent. It is a declaration; no runtime enforces it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "description", "capabilities"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/definitions/identifier" },
+    "description": { "$ref": "#/definitions/text" },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": { "$ref": "#/definitions/capability" }
+    }
+  },
+  "definitions": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "description", "tool", "risk", "humanApproval", "deniedToAllAgents"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,47}$" },
+        "title": { "$ref": "#/definitions/line" },
+        "description": { "$ref": "#/definitions/text" },
+        "tool": {
+          "enum": ["codebase", "docs", "github", "database", "none"],
+          "description": "Project tool switch this capability depends on, matching .ax/project.yaml tools."
+        },
+        "risk": { "enum": ["low", "medium", "high"] },
+        "humanApproval": { "type": "boolean", "description": "High-impact action that requires explicit human approval before use." },
+        "deniedToAllAgents": { "type": "boolean", "description": "No agent definition may claim this capability." }
+      }
+    },
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "line": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" }
+  }
+}

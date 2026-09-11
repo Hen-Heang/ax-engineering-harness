@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "default",
+  "description": "Default AX Harness capability vocabulary. Reads are broad, writes are narrow and reviewed, and the five high-impact capabilities are denied to every role.",
+  "capabilities": [
+    {
+      "id": "read_code",
+      "title": "Read repository code",
+      "description": "Read source, tests, and configuration in the working repository.",
+      "tool": "codebase",
+      "risk": "low",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "read_docs",
+      "title": "Read documentation and context",
+      "description": "Read the Markdown context a project declares, plus repository documentation.",
+      "tool": "docs",
+      "risk": "low",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "github_read",
+      "title": "Read GitHub metadata",
+      "description": "Read repository metadata, commits, issues, pull requests, CI status, and workflow results.",
+      "tool": "github",
+      "risk": "low",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "database_metadata",
+      "title": "Read database metadata",
+      "description": "Inspect schema, tables, columns, indexes, and constraints. Never row data, and never writes.",
+      "tool": "database",
+      "risk": "medium",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "run_tests",
+      "title": "Run declared quality commands",
+      "description": "Run the build, lint, typecheck, or test commands the project declared. No other command is implied.",
+      "tool": "codebase",
+      "risk": "medium",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "edit_worktree",
+      "title": "Edit an isolated worktree",
+      "description": "Modify files on a working branch. Never on the default branch, and never in someone else's checkout.",
+      "tool": "codebase",
+      "risk": "medium",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "create_branch",
+      "title": "Create a working branch",
+      "description": "Create and push a feature branch that no protected ruleset governs.",
+      "tool": "github",
+      "risk": "medium",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "comment_issue_or_pr",
+      "title": "Comment on an issue or pull request",
+      "description": "Add review comments. Comments are visible to others, so they are a write, not a read.",
+      "tool": "github",
+      "risk": "medium",
+      "humanApproval": false,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "create_pull_request",
+      "title": "Open a pull request",
+      "description": "Propose changes for review. High impact because it asks other people to act.",
+      "tool": "github",
+      "risk": "high",
+      "humanApproval": true,
+      "deniedToAllAgents": false
+    },
+    {
+      "id": "database_write",
+      "title": "Write to a database",
+      "description": "Insert, update, delete, or migrate data. Denied in v1; database access is metadata-only.",
+      "tool": "database",
+      "risk": "high",
+      "humanApproval": false,
+      "deniedToAllAgents": true
+    },
+    {
+      "id": "direct_main_push",
+      "title": "Push directly to the default branch",
+      "description": "Denied in v1. Changes reach the default branch through a reviewed pull request.",
+      "tool": "github",
+      "risk": "high",
+      "humanApproval": false,
+      "deniedToAllAgents": true
+    },
+    {
+      "id": "force_push",
+      "title": "Force push",
+      "description": "Denied in v1, because it can destroy history that other people depend on.",
+      "tool": "github",
+      "risk": "high",
+      "humanApproval": false,
+      "deniedToAllAgents": true
+    },
+    {
+      "id": "production_deploy",
+      "title": "Deploy to production",
+      "description": "Denied in v1. Deployment stays a human action outside the harness.",
+      "tool": "none",
+      "risk": "high",
+      "humanApproval": false,
+      "deniedToAllAgents": true
+    },
+    {
+      "id": "secrets_access",
+      "title": "Read secrets",
+      "description": "Denied in v1. Credentials never enter configuration, context, agent output, or diagnostics.",
+      "tool": "none",
+      "risk": "high",
+      "humanApproval": false,
+      "deniedToAllAgents": true
+    }
+  ]
+}

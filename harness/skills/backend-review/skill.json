@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "backend-review",
+  "name": "Backend review",
+  "status": "experimental",
+  "purpose": "Review server-side changes for layering, correctness, and failure behavior before they reach a human reviewer.",
+  "prerequisites": [
+    "A concrete diff or branch to review.",
+    "The architecture assumptions the profile records."
+  ],
+  "steps": [
+    "Check that controller, service, and repository or mapper responsibilities stayed separated.",
+    "Check that business logic did not leak into the controller.",
+    "Check transaction boundaries, including multi-write operations.",
+    "Check that API responses expose DTOs rather than persistence entities.",
+    "Check validation at the request boundary and error handling on failure paths.",
+    "Check that new behavior has tests, not only that tests still pass."
+  ],
+  "capabilities": ["read_code", "read_docs"],
+  "outputs": [
+    "Findings ordered by severity, each citing a file and line.",
+    "An explicit statement when no issue was found."
+  ],
+  "verification": [
+    "Every finding names the file and the rule it breaks.",
+    "Findings distinguish a defect from a preference."
+  ],
+  "escalation": [
+    "A finding is security relevant; hand it to security review.",
+    "A finding touches schema or query behavior; hand it to SQL review."
+  ]
+}

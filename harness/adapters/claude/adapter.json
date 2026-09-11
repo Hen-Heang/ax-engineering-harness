@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "claude",
+  "vendor": "Anthropic Claude Code",
+  "status": "implemented",
+  "entrypoint": "CLAUDE.md",
+  "sharedInstructions": ["AGENTS.md"],
+  "notes": [
+    "CLAUDE.md is a thin surface that defers to AGENTS.md rather than restating it.",
+    "It additionally imports docs/claude-handoff.md, a session handoff rather than durable instruction.",
+    "Renaming this repository into a Claude-specific harness is explicitly out of scope."
+  ]
+}

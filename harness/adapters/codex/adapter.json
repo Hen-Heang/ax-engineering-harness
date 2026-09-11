@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "codex",
+  "vendor": "OpenAI Codex",
+  "status": "implemented",
+  "entrypoint": "AGENTS.md",
+  "sharedInstructions": ["AGENTS.md"],
+  "notes": [
+    "Codex reads AGENTS.md, which is itself the vendor-neutral instruction document for this repository.",
+    "The entrypoint and the shared document coincide here; no Codex-specific architecture exists.",
+    "Nested projects keep their own AGENTS.md or CLAUDE.md, which apply when working inside them."
+  ]
+}

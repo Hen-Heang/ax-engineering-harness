@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "handoff",
+  "name": "Handoff",
+  "status": "experimental",
+  "purpose": "Record enough state that another session or person can continue the work without rebuilding the context from scratch.",
+  "prerequisites": [
+    "Work that is finished, blocked, or being paused."
+  ],
+  "steps": [
+    "State the goal in the requester's terms.",
+    "List what was actually completed, separately from what was attempted.",
+    "State the current status honestly, including partial work.",
+    "List changed files and the decisions behind them.",
+    "List blockers and the approaches that were tried and failed, so they are not repeated.",
+    "State the verification status of every claim.",
+    "List concrete next steps."
+  ],
+  "capabilities": ["read_code", "read_docs"],
+  "outputs": [
+    "A handoff record covering goal, completed work, status, changes, decisions, blockers, failed attempts, next steps, and validation."
+  ],
+  "verification": [
+    "Another session could resume from the record alone.",
+    "Every status claim matches evidence; unverified work is labelled unverified.",
+    "Failed attempts are recorded rather than quietly omitted."
+  ],
+  "escalation": [
+    "The work is blocked on a decision only a human can make; say so in the record."
+  ]
+}

@@ -1,0 +1,45 @@
+# Declares this repository's own Node tooling workspace. The harness-tooling profile
+# supplies matching defaults; the commands below are declared explicitly and win.
+schemaVersion: 1
+project:
+  name: ax-engineering-harness
+  mode: single-repo
+  profile: harness-tooling
+context:
+  architecture: docs/architecture.md
+commands:
+  build: npm run build
+  lint: npm run lint
+  typecheck: npm run typecheck
+  test: npm test
+  integration_test: npm run e2e
+  security: npm audit --omit=dev
+tools:
+  codebase:
+    enabled: true
+  docs:
+    enabled: true
+  github:
+    enabled: false
+  database:
+    enabled: false
+    mode: metadata-only
+permissions:
+  direct_main_push: false
+  force_push: false
+  production_deploy: false
+  database_write: false
+  secrets_access: false
+quality:
+  build: true
+  lint: true
+  typecheck: true
+  tests: true
+  integration_tests: true
+  security: true
+  review: true
+  eval: false
+  human_approval: true
+limits:
+  max_retries: 2
+  max_duration_seconds: 600
