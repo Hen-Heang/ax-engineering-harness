@@ -21,7 +21,7 @@ export function CapabilityMatrix({
 }) {
   return (
     <div className="relative min-w-0 max-w-full overflow-x-auto rounded-lg border">
-      <table className="w-full min-w-[46rem] border-collapse text-sm">
+      <table className="w-full min-w-184 border-collapse text-sm">
         <caption className="sr-only">
           Which role holds which capability, as the policy declares it. Nothing enforces this.
         </caption>

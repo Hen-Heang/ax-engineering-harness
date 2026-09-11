@@ -15,8 +15,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 8 | Overview and responsive console navigation | Implemented |
 | 9 | Architecture and workflow visualizations | Implemented |
 | 10 | Building-block pages and Config Explorer | Implemented |
-| 11 | Quality, evals, example runs, adoption simulator, docs | Next |
-| 12 | Integrated tests, accessibility, responsive QA | Planned |
+| 11 | Quality, evals, example runs, adoption simulator, docs | Implemented |
+| 12 | Integrated tests, accessibility, responsive QA | Next |
 
 ## Phase 2 decisions
 
@@ -212,14 +212,34 @@ bounded phases, inspecting existing code and verifying each change before the ne
 - The navigation gained a Config explorer entry under Reference, and the navigation
   test was updated to match the section list the console actually has.
 
-## Phase 11 acceptance criteria
+## Phase 11 decisions
 
-Add the quality gates, evals, runs, projects and docs pages. Gate results must keep
-passed, failed, unavailable and unrun distinct on screen as well as in the model, and
-no page may present a demo record as a real execution: every example must be labelled
-where it is displayed. The adoption simulator may run from static validated
-configuration, and must show which profile, roles, skills, tools, gates and policies a
-chosen stack would activate without implying that anything executes.
+- The example eval outcomes are computed by the harness's own scorer over example
+  judgements, so the page demonstrates the real rules instead of displaying numbers
+  somebody typed. One example deliberately shows a full score that still fails.
+- Illustrative content is labelled where it is displayed rather than once in a
+  footnote, so a screenshot of a page cannot misrepresent it. The runs record carries
+  both a notice and a badge.
+- Gate outcomes are rendered with the word always present, so passed and unrun are
+  never distinguished by colour alone.
+- The adoption simulator states what does not change as prominently as what does.
+  Only the profile layer varies by stack; roles, procedures and policy are identical,
+  and pretending otherwise would have been an easy but dishonest demo.
+- The simulator is a client component and declares its view types locally, so it
+  never imports a module that reaches the harness.
+- The docs page links each topic to its console page and names the authoritative
+  repository document, rather than reading Markdown from disk, which would have
+  needed filesystem access the console deliberately does not have.
+- The navigation test that asserted unbuilt sections exist was replaced once every
+  section landed, rather than left to pass vacuously.
+
+## Phase 12 acceptance criteria
+
+Verify the console systematically rather than by sampling: accessibility and
+responsive behaviour at desktop, tablet, 428px and a narrower width, across every
+page, with automated coverage that runs in the repository's own checks. Address what
+that finds. Keep the harness checks passing unchanged, and record honestly what
+remains untested, including platforms and browsers that were not exercised.
 
 ## Verification
 

@@ -54,22 +54,22 @@ export const navigation: NavSection[] = [
   {
     label: 'Quality',
     items: [
-      { label: 'Quality gates', href: null, icon: SquareCheckBig, phase: 11 },
-      { label: 'Evals', href: null, icon: FlaskConical, phase: 11 },
-      { label: 'Runs', href: null, icon: History, phase: 11 },
+      { label: 'Quality gates', href: '/quality', icon: SquareCheckBig, phase: 11 },
+      { label: 'Evals', href: '/evals', icon: FlaskConical, phase: 11 },
+      { label: 'Runs', href: '/runs', icon: History, phase: 11 },
     ],
   },
   {
     label: 'Adoption',
     items: [
-      { label: 'Projects', href: null, icon: Boxes, phase: 11 },
+      { label: 'Projects', href: '/projects', icon: Boxes, phase: 11 },
     ],
   },
   {
     label: 'Reference',
     items: [
       { label: 'Config explorer', href: '/config', icon: FileJson, phase: 10 },
-      { label: 'Docs', href: null, icon: BookOpen, phase: 11 },
+      { label: 'Docs', href: '/docs', icon: BookOpen, phase: 11 },
     ],
   },
 ];

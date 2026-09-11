@@ -1,9 +1,9 @@
 # AX Engineering Console (v1)
 
-Implemented: the `apps/web` workspace package, the allowlisted catalog, the
-persistent navigation, the Overview page, the architecture and workflow diagrams,
-the building-block pages, and the configuration explorer. Planned: the quality,
-evals, runs, projects and docs pages, and the adoption simulator.
+Implemented: every page of the console — Overview, architecture and workflow
+diagrams, the building-block pages, the configuration explorer, quality gates,
+evals, runs, adoption with its simulator, and docs. Planned: systematic
+accessibility and responsive QA, which is the remaining phase.
 
 ```sh
 npm run dev --workspace @ax-harness/web    # local development
@@ -193,3 +193,42 @@ made any difference, because the problem was not the ancestors.
 Adding `relative` to the scroll container fixed it: the labels are now contained by
 it and clipped with everything else. The container's `relative` is therefore
 load-bearing and commented as such, and all 113 labels are retained.
+
+## Quality, evals and runs
+
+The four gate outcomes are rendered as distinct badges **with the word always
+present**, so the difference between a pass and an unrun gate never depends on
+colour. The quality page also shows, per profile, which gates that profile can
+supply and which the project must declare.
+
+The evals page scores three example judgements with the **same function the harness
+uses**, so the page demonstrates the real rules rather than displaying numbers
+somebody typed:
+
+| Example | Result |
+| --- | --- |
+| Every criterion met | 100%, pass |
+| Two criteria not judged | 70%, fail, with the unjudged criteria named |
+| Full score, forbidden behaviour observed | 100%, **fail** |
+
+The last row is the point: forbidden behaviour is disqualifying, not a deduction.
+
+The runs page labels its record as an example twice — once in a notice above it and
+once as a badge on the record itself — because a screenshot of a page should not be
+able to misrepresent it. The record reports integration tests as `unavailable`
+rather than passed, and states that absent measurements mean unmeasured, never zero.
+
+## The adoption simulator
+
+Selecting a stack shows what that profile would resolve, which gates it could supply
+and which the project must declare, and for the composed profile the areas and the
+roles that own them. It runs from validated configuration compiled into the page: it
+resolves nothing at request time, reaches no filesystem, and starts nothing.
+
+It also says what does **not** change. Only the profile layer varies by stack; the
+eight roles, the ten procedures and the capability policy are identical whichever
+stack is adopted, because the harness core is deliberately free of stack assumptions.
+Pretending roles differ per stack would have been an easy and dishonest demo.
+
+The simulator is a client component, so it declares its own view types locally rather
+than importing them from a module that reaches the harness.

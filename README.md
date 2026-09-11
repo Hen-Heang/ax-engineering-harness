@@ -4,7 +4,7 @@ A reusable engineering layer for reliable AI-assisted software development.
 
 Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-**Experimental / Learning Project — Phase 10 building blocks and config explorer.**
+**Experimental / Learning Project — Phase 11 quality, evals, runs, adoption and docs.**
 
 This backend-first project explores how human direction, context, reusable
 procedures, controlled tools, verification, and evaluation improve AI-assisted
@@ -29,9 +29,9 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 - A local read-only CLI, typecheck, automated tests, and package build.
 - An `apps/web` console with persistent navigation, a mobile sheet, an Overview page
   whose status labels come from the definitions, read-only architecture and workflow
-  diagrams with a full text alternative, pages for profiles, agents, skills, tools and
-  policies, and a configuration explorer with one page per definition.
-  Tests assert the console can reach no repository file.
+  diagrams with a full text alternative, pages for every building block, a
+  configuration explorer, quality, evals, runs, adoption with a stack simulator, and
+  docs. Tests assert the console can reach no repository file.
 
 **Nothing executes.** Gate execution, MCP connections, live runs, policy
 enforcement, and the website are **planned**. Defining a role starts no agent,
@@ -182,7 +182,7 @@ explorer, and the adoption simulator arrive in later phases; demo runs and evals
 stay labelled as examples. See [the console](docs/web-console.md).
 
 The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
-Next: the quality, evals and runs pages, the adoption simulator, and the docs.
+Next: integrated tests, accessibility and responsive QA across breakpoints.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or

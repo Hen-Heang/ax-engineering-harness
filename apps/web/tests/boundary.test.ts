@@ -127,5 +127,5 @@ test('the modules that do import the harness are server-only', async () => {
   // harness, the smaller the surface that has to stay on the server.
   // lib/definitions.ts is deliberately absent: it takes only types from the harness,
   // which are erased, so its single runtime dependency is the catalog.
-  assert.deepEqual(importers.sort(), ['lib/catalog.ts', 'lib/graph.ts']);
+  assert.deepEqual(importers.sort(), ['lib/catalog.ts', 'lib/graph.ts', 'lib/simulation.ts']);
 });

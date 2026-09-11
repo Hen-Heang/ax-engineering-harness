@@ -53,13 +53,13 @@ test('an item is a link only when its page exists', async () => {
   }
 });
 
-test('an unbuilt section is listed without a destination', () => {
+test('every listed section now has a page', () => {
+  // Earlier phases listed unbuilt sections without a destination. All of them have
+  // landed, so the assertion is now that none is left dangling rather than that some
+  // still are; the "link only when the page exists" test above remains the guard.
   const planned = navItems.filter(item => item.href === null);
-  assert.ok(planned.length > 0, 'later phases are still listed');
-  for (const item of planned) {
-    assert.equal(item.href, null, `${item.label} must not link anywhere yet`);
-    assert.ok(item.phase > 8, `${item.label} should be delivered by a later phase`);
-  }
+  assert.deepEqual(planned.map(item => item.label), []);
+  assert.equal(availableNavItems.length, navItems.length);
 });
 
 test('hrefs are unique, so no two sections claim the same page', () => {

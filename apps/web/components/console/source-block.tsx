@@ -11,7 +11,7 @@ export function SourceBlock({ source, label }: { source: string; label: string }
       <figcaption className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </figcaption>
-      <pre className="max-h-[28rem] overflow-auto rounded-lg border bg-muted/40 p-4 font-mono text-xs leading-relaxed">
+      <pre className="max-h-112 overflow-auto rounded-lg border bg-muted/40 p-4 font-mono text-xs leading-relaxed">
         {source}
       </pre>
     </figure>
