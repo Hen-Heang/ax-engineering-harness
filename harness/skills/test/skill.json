@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "test",
+  "name": "Test",
+  "status": "experimental",
+  "purpose": "Run the quality gates a project actually declared and report their real results, keeping passed, failed, unavailable, and unrun distinct.",
+  "prerequisites": [
+    "A resolved project declaration, so every enabled gate has a command.",
+    "A working tree in the state that is meant to be tested."
+  ],
+  "steps": [
+    "Read the resolved commands rather than inventing one.",
+    "Run each enabled gate in the declared order.",
+    "Record the exit status and the relevant output for each gate.",
+    "Report a gate with no command as unavailable, never as passed.",
+    "Report a gate that was not run as unrun, never as passed.",
+    "Summarize which gates ran, which failed, and what the failure was."
+  ],
+  "capabilities": ["read_code", "run_tests"],
+  "outputs": [
+    "A per-gate result of passed, failed, unavailable, or unrun.",
+    "The evidence behind each result."
+  ],
+  "verification": [
+    "Every reported result corresponds to a command that actually ran.",
+    "No gate is marked passed because it was skipped, disabled, or substituted."
+  ],
+  "escalation": [
+    "A declared command does not exist; report it unavailable rather than substituting another.",
+    "A gate needs credentials, a database, or a network service that policy denies."
+  ]
+}

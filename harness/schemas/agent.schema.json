@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/agent/v1",
+  "title": "AgentDefinition",
+  "description": "AX Harness v1 agent. An agent is an engineering role with bounded responsibilities, not a running process. Defining an agent starts nothing and grants nothing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "status", "purpose", "responsibilities", "requiredContext", "capabilities", "skills", "forbidden", "inputs", "outputs", "escalation"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/definitions/identifier" },
+    "name": { "$ref": "#/definitions/line" },
+    "status": { "enum": ["implemented", "experimental", "planned"] },
+    "purpose": { "$ref": "#/definitions/text" },
+    "responsibilities": { "$ref": "#/definitions/notes", "description": "What this role owns. Roles must not overlap in ownership." },
+    "requiredContext": { "$ref": "#/definitions/notes", "description": "What must be loaded before this role can work usefully." },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,47}$" },
+      "description": "Capabilities the role is allowed to use. Anything absent is denied by default."
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "$ref": "#/definitions/identifier" },
+      "description": "Procedures this role follows. The role must hold every capability those procedures need."
+    },
+    "forbidden": { "$ref": "#/definitions/notes", "description": "Actions this role must never take, stated for readers as well as tools." },
+    "inputs": { "$ref": "#/definitions/notes" },
+    "outputs": { "$ref": "#/definitions/notes" },
+    "escalation": { "$ref": "#/definitions/notes", "description": "Conditions that require stopping and returning to a human." }
+  },
+  "definitions": {
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "line": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "note": { "type": "string", "minLength": 1, "maxLength": 320, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "notes": { "type": "array", "minItems": 1, "maxItems": 32, "items": { "$ref": "#/definitions/note" } }
+  }
+}

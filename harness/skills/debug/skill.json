@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "debug",
+  "name": "Debug",
+  "status": "experimental",
+  "purpose": "Find and fix the root cause of a reproducible failure, and leave behind a test that would have caught it.",
+  "prerequisites": [
+    "A reproducible failure, a failing gate, or a concrete error report."
+  ],
+  "steps": [
+    "Reproduce the failure and record exactly how.",
+    "Narrow the failure to the smallest input or code path that still shows it.",
+    "State a hypothesis about the cause that could be proven wrong.",
+    "Test the hypothesis with the smallest possible probe.",
+    "Fix the cause rather than the symptom.",
+    "Add a regression test that fails before the fix and passes after it.",
+    "Re-run the declared gates."
+  ],
+  "capabilities": ["read_code", "run_tests", "edit_worktree"],
+  "outputs": [
+    "The reproduction steps.",
+    "The root cause, stated plainly.",
+    "The fix and the regression test that covers it."
+  ],
+  "verification": [
+    "The failure was observed before the fix and is gone after it.",
+    "The regression test fails when the fix is reverted.",
+    "No unrelated code was changed while chasing the bug."
+  ],
+  "escalation": [
+    "The failure cannot be reproduced; report that rather than guessing at a fix.",
+    "The cause lies in data or infrastructure that requires a denied capability."
+  ]
+}

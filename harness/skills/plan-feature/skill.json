@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "plan-feature",
+  "name": "Plan feature",
+  "status": "experimental",
+  "purpose": "Turn findings into an ordered, bounded plan whose scope, verification, and approval points are explicit before implementation starts.",
+  "prerequisites": [
+    "Investigation findings for the requirement.",
+    "Knowledge of which quality gates the project enables."
+  ],
+  "steps": [
+    "State the scope and, just as explicitly, the non-goals.",
+    "List the layers and files each step will touch.",
+    "Sequence the steps so that each one can be verified on its own.",
+    "Attach the verification command or check to every step.",
+    "Mark the points where a human must approve before continuing.",
+    "Confirm no step needs a capability the role does not hold."
+  ],
+  "capabilities": ["read_code", "read_docs"],
+  "outputs": [
+    "An ordered plan naming files and verification for each step.",
+    "Explicit non-goals that keep unrelated refactoring out of scope.",
+    "The approval points a human must clear."
+  ],
+  "verification": [
+    "Each step names what it changes and how it is checked.",
+    "The plan excludes cleanups the requirement did not ask for."
+  ],
+  "escalation": [
+    "The plan cannot work without a denied capability.",
+    "The requirement turns out to be larger than the requester expects."
+  ]
+}

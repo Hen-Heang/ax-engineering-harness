@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "investigate",
+  "name": "Investigate",
+  "status": "experimental",
+  "purpose": "Understand a requirement against the real codebase before anything is changed, so that later work is based on evidence rather than assumption.",
+  "prerequisites": [
+    "A stated requirement or reported problem.",
+    "A resolved project declaration, so commands and architecture assumptions are known."
+  ],
+  "steps": [
+    "Restate the requirement in your own words and list what is still unknown.",
+    "Locate the entrypoints and modules the requirement touches.",
+    "Read the related code, tests, and declared context documents.",
+    "Record the architecture assumptions the profile states, which the change must preserve.",
+    "Write findings with file references, affected areas, risks, and open questions.",
+    "Stop before editing. Investigation ends with understanding, not a change."
+  ],
+  "capabilities": ["read_code", "read_docs", "github_read"],
+  "outputs": [
+    "Findings that cite specific files and symbols.",
+    "A list of affected areas and the risks each carries.",
+    "Open questions that a human must answer."
+  ],
+  "verification": [
+    "Every claim points at a file, symbol, or command output.",
+    "Anything not confirmed is written down as unknown rather than assumed."
+  ],
+  "escalation": [
+    "The requirement is ambiguous enough that two readings imply different work.",
+    "Required context is missing, unreadable, or outside the project root."
+  ]
+}

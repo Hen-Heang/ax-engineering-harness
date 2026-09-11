@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "implement-feature",
+  "name": "Implement feature",
+  "status": "experimental",
+  "purpose": "Make the planned change as a small, verified, reviewable edit that preserves the architecture the project already committed to.",
+  "prerequisites": [
+    "An approved plan.",
+    "A working branch, never the default branch."
+  ],
+  "steps": [
+    "Work on a branch in an isolated worktree.",
+    "Make the smallest coherent change that satisfies one planned step.",
+    "Follow the layering and conventions the profile records as assumptions.",
+    "Add or update the tests that prove the new behavior.",
+    "Run the declared build and test commands.",
+    "Leave files the plan did not name untouched."
+  ],
+  "capabilities": ["read_code", "read_docs", "edit_worktree", "run_tests", "create_branch"],
+  "outputs": [
+    "A changed-file list with the reason for each change.",
+    "Test additions covering the new behavior.",
+    "Verification results, including any failure."
+  ],
+  "verification": [
+    "The declared gates were run and their real results reported.",
+    "A failing check is reported as failing and never suppressed or worked around.",
+    "The diff contains no unrelated edits."
+  ],
+  "escalation": [
+    "A gate still fails after the declared retry limit.",
+    "The change turns out to require a capability the role does not hold.",
+    "Implementation reveals the plan was wrong; return to planning rather than improvising."
+  ]
+}

@@ -8,8 +8,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 1 | Repository audit and architecture | Complete |
 | 2 | Core package, project schema, validator, context checks, tests | Implemented |
 | 3 | Java/Spring profile and resolution | Implemented |
-| 4 | Agents, procedural skills, policies, vendor adapters | Next |
-| 5 | Quality, workflow, eval, run and handoff foundations | Planned |
+| 4 | Agents, procedural skills, policies, vendor adapters | Implemented |
+| 5 | Quality, workflow, eval, run and handoff foundations | Next |
 | 6 | Next.js and full-stack profiles | Planned |
 | 7 | Next.js web package and safe catalog | Planned |
 | 8 | Overview and responsive console navigation | Planned |
@@ -52,13 +52,36 @@ bounded phases, inspecting existing code and verifying each change before the ne
 - Profile command arguments are whitespace-free tokens joined with single spaces,
   so resolution never needs to quote or escape.
 
-## Phase 4 acceptance criteria
+## Phase 4 decisions
 
-Define the eight agent roles and ten procedural skills as versioned data with the
-same treatment profiles received: a schema, a registry, tests, and explicit status
-labels. Add the permission/capability matrix that policies express, and the Codex
-and Claude adapters as translations of shared instructions rather than competing
-architectures. Definitions must not imply that any agent executes.
+- Roles, procedures, capabilities and adapters are versioned data under their own
+  schemas, treated exactly as profiles were, rather than prose in documentation.
+- One capability vocabulary serves agents and skills, so the permission matrix is
+  derived from the definitions instead of being maintained separately.
+- The five capabilities denied to every role reuse the identifiers of the five
+  permissions the project schema forces to `false`, and a test asserts the two sets
+  are identical. The policy and configuration contracts cannot drift apart.
+- Each capability names the project tool it depends on, so the tools a role needs
+  follow from its capabilities rather than being listed twice.
+- The registry refuses to load definitions that contradict each other: an unknown
+  skill, an unknown or denied capability, or a role listing a procedure whose
+  capabilities it does not hold. The guard is a pure exported function so that the
+  guard itself is tested, not merely assumed.
+- Type generation loops over `schemas/*.json`, so a new schema automatically gets
+  a generated declaration and drift coverage.
+- `ax policy` prints the matrix from the definitions, which keeps the data honest
+  by making it visible, and states in its own output that nothing enforces it.
+- Every role and procedure is labelled experimental. The definitions are real; no
+  runner exists, and none is implied by defining eight roles.
+
+## Phase 5 acceptance criteria
+
+Model the quality pipeline, evaluation, run records, and handoff as contracts with
+the same rigour. Gate results must keep passed, failed, unavailable, and unrun
+distinct, and a profile that supplies no command for an enabled gate must surface
+as unavailable rather than as a pass. Evals assess agent behavior and are separate
+from application tests. Run records and any cost or token field must be modelled
+without inventing values. Nothing may claim an execution occurred.
 
 ## Verification
 

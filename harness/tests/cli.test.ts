@@ -19,3 +19,12 @@ test('CLI returns nonzero for missing configuration and invalid usage', () => {
   assert.equal(run('run').status, 2);
   assert.equal(run('validate', 'one', 'two').status, 2);
 });
+
+test('CLI prints the capability matrix and states that nothing enforces it', () => {
+  const result = run('policy');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Nothing enforces them/);
+  assert.match(result.stdout, /database_write\s+high\s+database\s+denied to every agent/);
+  assert.match(result.stdout, /create_pull_request.*human approval required/);
+  assert.equal(run('policy', 'extra').status, 2);
+});

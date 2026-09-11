@@ -1,6 +1,6 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": { "outDir": "dist", "rootDir": ".", "declaration": true },
-  "include": ["**/*.ts", "schemas/*.json", "profiles/*/*.json"],
+  "include": ["**/*.ts", "schemas/*.json", "profiles/*/*.json", "agents/*/*.json", "skills/*/*.json", "policies/*/*.json", "adapters/*/*.json"],
   "exclude": ["dist", "node_modules"]
 }

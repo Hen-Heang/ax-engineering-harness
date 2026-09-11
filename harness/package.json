@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "generate:types": "json2ts -i schemas/project.schema.json -o config/project.generated.ts && json2ts -i schemas/profile.schema.json -o config/profile.generated.ts"
+    "generate:types": "node scripts/generate-types.mjs"
   },
   "dependencies": { "ajv": "8.20.0", "yaml": "2.9.0" },
   "devDependencies": {

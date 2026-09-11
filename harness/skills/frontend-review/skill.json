@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "frontend-review",
+  "name": "Frontend review",
+  "status": "experimental",
+  "purpose": "Review client-side changes for component boundaries, typing, accessibility, and responsive behavior.",
+  "prerequisites": [
+    "A concrete diff or branch to review.",
+    "The profile's stated component and routing assumptions."
+  ],
+  "steps": [
+    "Check the server and client component boundary and what that choice costs.",
+    "Check where data is fetched and how loading and error states are handled.",
+    "Check that types describe the real shape rather than widening to any.",
+    "Check keyboard access, focus visibility, labelling, and contrast.",
+    "Check behavior at narrow viewport widths, including no accidental horizontal overflow.",
+    "Check that state is owned at the right level rather than duplicated."
+  ],
+  "capabilities": ["read_code", "read_docs"],
+  "outputs": [
+    "Findings ordered by severity, each citing a file and line.",
+    "Accessibility and responsive issues called out separately, because they are easy to defer and hard to retrofit."
+  ],
+  "verification": [
+    "Every finding names the file and the rule it breaks.",
+    "Accessibility claims describe the actual barrier, not a generic reminder."
+  ],
+  "escalation": [
+    "A finding depends on a backend contract; hand it to integration review.",
+    "A finding involves authentication or data exposure; hand it to security review."
+  ]
+}

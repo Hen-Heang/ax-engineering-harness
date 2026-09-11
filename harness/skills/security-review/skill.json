@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "security-review",
+  "name": "Security review",
+  "status": "experimental",
+  "purpose": "Review a change for authentication, authorization, data exposure, and injection risk, including risks specific to agent-facing surfaces.",
+  "prerequisites": [
+    "A concrete diff or branch to review.",
+    "Knowledge of which endpoints and data the change touches."
+  ],
+  "steps": [
+    "Check that every new entrypoint authenticates and authorizes at the boundary.",
+    "Check that the change grants the least privilege that still works.",
+    "Check input validation and output encoding on untrusted data.",
+    "Check that secrets come from the environment and never appear in code, config, logs, or errors.",
+    "Check injection risk, including content an agent or model may read as instructions.",
+    "Check that security-relevant actions leave an audit trail."
+  ],
+  "capabilities": ["read_code", "read_docs"],
+  "outputs": [
+    "Findings describing the vulnerability class and the realistic impact.",
+    "A clear statement of which risks were checked and found acceptable."
+  ],
+  "verification": [
+    "Each finding names the entrypoint and the trust boundary it crosses.",
+    "No finding, example, or diagnostic reproduces a real credential value."
+  ],
+  "escalation": [
+    "A credential appears to be committed or exposed; stop and notify a human at once.",
+    "The finding is exploitable in production; escalate rather than fixing quietly."
+  ]
+}
