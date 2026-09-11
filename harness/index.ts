@@ -2,14 +2,16 @@ export { validateProject, validateDeclaration } from './config/validate.js';
 export type { ValidationResult, ConfigIssue } from './config/validate.js';
 export { parseProject, loadProject } from './config/load.js';
 export { checkContextFiles } from './core/context/resolve.js';
-export { getProfile, profileIds } from './core/profiles/registry.js';
+export { getProfile, isComposed, profileIds } from './core/profiles/registry.js';
+export { analyzeImpact } from './core/profiles/areas.js';
+export type { AreaImpact } from './core/profiles/areas.js';
 export { resolveProject } from './core/profiles/resolve.js';
 export type {
-  CommandSource, ResolutionResult, ResolvedCommand, ResolvedProject, ResolveOptions,
+  CommandSource, ResolutionResult, ResolvedArea, ResolvedCommand, ResolvedProject, ResolveOptions,
 } from './core/profiles/resolve.js';
-export { buildSystemIds, currentPlatform, detectBuildSystems, selectBuildSystem } from './core/buildsystem/detect.js';
+export { buildSystemIds, checkEvidence, currentPlatform, detectBuildSystems, directoryExists, selectBuildSystem } from './core/buildsystem/detect.js';
 export type {
-  BuildSystemId, BuildSystemSelection, Platform, ResolvedRunner, RunnerAvailability,
+  BuildSystemId, BuildSystemSelection, EvidenceReport, Platform, ResolvedRunner, RunnerAvailability,
 } from './core/buildsystem/detect.js';
 export {
   adapterIds, agentIds, consistencyErrors, getAdapter, getAgent, getSkill, skillIds,

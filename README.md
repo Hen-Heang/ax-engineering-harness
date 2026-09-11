@@ -4,7 +4,7 @@ A reusable engineering layer for reliable AI-assisted software development.
 
 Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-**Experimental / Learning Project — Phase 5 quality, workflow and eval foundations.**
+**Experimental / Learning Project — Phase 6 Next.js and full-stack profiles.**
 
 This backend-first project explores how human direction, context, reusable
 procedures, controlled tools, verification, and evaluation improve AI-assisted
@@ -18,6 +18,8 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 - YAML validation, required gate-command checks, and explicit high-impact denials.
 - Context-reference checks including missing files and symlink escape.
 - Profile resolution against a built-in registry; unknown profiles fail.
+- Composed multi-area profiles, supporting-evidence reporting, and affected-area
+  analysis that decides which roles a change involves.
 - Maven/Gradle/Node build detection at one explicit root, with Windows and POSIX
   wrapper forms. Ambiguous evidence fails instead of guessing.
 - Eight roles, ten procedures, a capability vocabulary, and two vendor adapters,
@@ -82,14 +84,17 @@ and [profiles](docs/profiles.md) for the profile contract.
 | --- | --- |
 | `harness-tooling` — this repository's Node workspace | Implemented |
 | `java-spring` — Java / Spring, Maven or Gradle | Experimental |
-| Next.js / React | Planned |
-| Full-stack composition | Planned |
+| `nextjs-react` — Next.js App Router on Node | Experimental |
+| `fullstack` — composed backend and frontend areas | Experimental |
 | Multi-repository execution | Planned; rejected by current schema |
 
-`java-spring` resolves build and test commands and records its architecture
-assumptions and limitations. It has not been validated against the legacy Java
-projects preserved here, and it supplies no lint, typecheck, security, or
-integration-test defaults, because those have no single standard Java command.
+Profiles supply only commands a project reliably has. `java-spring` supplies build
+and test; Java has no single standard lint, typecheck, security, or integration-test
+command. `nextjs-react` supplies only build and security, because a Next.js linter
+is optional, no typecheck or test script is scaffolded, and Playwright is never
+assumed. `fullstack` supplies nothing at all: it resolves a backend and a frontend
+area with their own profiles and runners, and the project declares commands that
+cover both. Neither has been validated against the legacy projects preserved here.
 
 ## Roles, procedures and permissions
 
@@ -165,8 +170,8 @@ architecture/workflow diagrams, Config Explorer, building-block documentation,
 permission matrices, and an adoption simulator. Demo runs/evals will be labeled.
 
 The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
-Next: the Next.js and full-stack profiles, then the console and responsive
-verification.
+Next: the `apps/web` console foundation and its safe public catalog, then the
+building-block pages and responsive verification.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or

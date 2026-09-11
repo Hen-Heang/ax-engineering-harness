@@ -112,7 +112,7 @@ export type Argument = string;
 export type Note = string;
 
 /**
- * AX Harness v1 stack profile. A profile supplies command defaults and documented assumptions. It never grants capabilities, relaxes permissions, enables quality gates, or proves that a toolchain is installed.
+ * AX Harness v1 stack profile. A profile supplies command defaults and documented assumptions. It never grants capabilities, relaxes permissions, enables quality gates, or proves that a toolchain is installed. A profile declares either buildSystems or areas, never both.
  */
 export interface ProfileDefinition {
   schemaVersion: 1;
@@ -123,13 +123,125 @@ export interface ProfileDefinition {
   status: "implemented" | "experimental" | "planned";
   description: string;
   /**
-   * Supported build systems. Manifest presence is evidence of layout only.
+   * Supported build systems for a single-area project. Manifest presence is evidence of layout only.
    */
-  buildSystems: {
+  buildSystems?: {
     maven?: BuildSystem;
     gradle?: BuildSystem;
     node?: BuildSystem;
   };
+  /**
+   * Composed areas of one repository, each resolved by its own profile. A composed profile supplies no commands of its own.
+   *
+   * @minItems 2
+   * @maxItems 8
+   */
+  areas?:
+    | [Area, Area]
+    | [Area, Area, Area]
+    | [Area, Area, Area, Area]
+    | [Area, Area, Area, Area, Area]
+    | [Area, Area, Area, Area, Area, Area]
+    | [Area, Area, Area, Area, Area, Area, Area]
+    | [Area, Area, Area, Area, Area, Area, Area, Area];
+  /**
+   * Files that support this profile beyond the build manifest. Presence raises confidence; absence disproves nothing, and evidence never selects a build system.
+   *
+   * @minItems 1
+   * @maxItems 16
+   */
+  evidence?:
+    | [FileName]
+    | [FileName, FileName]
+    | [FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName, FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName]
+    | [FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName, FileName]
+    | [
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName
+      ]
+    | [
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName
+      ]
+    | [
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName
+      ]
+    | [
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName
+      ]
+    | [
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName,
+        FileName
+      ];
   /**
    * Assumptions a reviewer should preserve. Assumptions are not verified facts about any project.
    *
@@ -192,4 +304,31 @@ export interface RunnerForm {
    * Platform invocation form for that wrapper.
    */
   command: string;
+}
+export interface Area {
+  id: string;
+  title: string;
+  /**
+   * Repository-relative directory holding this area.
+   */
+  path: string;
+  /**
+   * Profile that resolves this area. It must itself declare buildSystems.
+   */
+  profile: string;
+  /**
+   * Roles that own work in this area.
+   *
+   * @minItems 1
+   * @maxItems 8
+   */
+  roles:
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string]
+    | [string, string, string, string, string]
+    | [string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string]
+    | [string, string, string, string, string, string, string, string];
 }

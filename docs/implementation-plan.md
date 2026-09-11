@@ -10,8 +10,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 3 | Java/Spring profile and resolution | Implemented |
 | 4 | Agents, procedural skills, policies, vendor adapters | Implemented |
 | 5 | Quality, workflow, eval, run and handoff foundations | Implemented |
-| 6 | Next.js and full-stack profiles | Next |
-| 7 | Next.js web package and safe catalog | Planned |
+| 6 | Next.js and full-stack profiles | Implemented |
+| 7 | Next.js web package and safe catalog | Next |
 | 8 | Overview and responsive console navigation | Planned |
 | 9 | Architecture and workflow visualizations | Planned |
 | 10 | Building-block pages and Config Explorer | Planned |
@@ -102,15 +102,42 @@ bounded phases, inspecting existing code and verifying each change before the ne
 - The written-handoff checker runs over this repository's own phase handoffs, so
   the project is held to the contract it publishes.
 
-## Phase 6 acceptance criteria
+## Phase 6 decisions
 
-Add the Next.js/React profile and full-stack composition. The Next.js profile must
-detect a Node build root and supply only commands a Next.js project genuinely has,
-with lint, typecheck, test and build treated separately and Playwright not assumed.
-Full-stack composition must determine affected areas without inventing parallel
-agent execution. Versions must be verified at implementation time rather than
-assumed, and no profile may claim a framework is present merely because a manifest
-exists.
+- The Next.js profile was written from the current Next.js documentation rather
+  than from assumption, and that changed it. `next lint` is absent from the current
+  CLI; a linter is optional in create-next-app, which offers ESLint, Biome or none;
+  and no typecheck or test script is scaffolded. The profile therefore supplies only
+  build and security, and records the `next typegen && tsc --noEmit` pattern as
+  guidance rather than as a default.
+- Profiles gained optional supporting `evidence` (such as `next.config.ts`). It is
+  reported and never acted on: it cannot select a build system and cannot cause a
+  failure, because its absence disproves nothing. It exists so a reader can judge
+  confidence instead of being told a manifest proves a framework.
+- A profile declares either `buildSystems` or `areas`, never both, enforced when
+  the registry loads. Composition is one level deep, so a composed profile cannot
+  compose another.
+- A composed project has no single build root, so `buildSystem` and `runner` are
+  undefined for the project as a whole and `project.build_system` is rejected rather
+  than silently applied to one area.
+- `fullstack` supplies no commands at all. No single command covers two build
+  systems, so inventing one would be dishonest; the project declares its own.
+- Affected-area analysis is path analysis and says so. It reports unattributed paths
+  rather than dropping them, and reaching an area's directory is not proof that
+  another area's behavior is unaffected.
+- Determining affected areas decides which roles are involved. It starts nothing,
+  and no parallel agent execution is implied or provided.
+
+## Phase 7 acceptance criteria
+
+Create `apps/web` as a second workspace package with Next.js, TypeScript, Tailwind
+and shadcn/ui primitives. Verify compatible stable versions at implementation time
+rather than assuming them. The site must render from an explicit allowlisted catalog
+built from the real profile, role, skill, policy, pipeline and eval definitions, so
+documentation cannot drift from behavior. The browser must never receive arbitrary
+filesystem or server capability, and no local run artifact, legacy project file, or
+credential may be published. Harness checks must keep passing unchanged alongside
+the new package's own lint, typecheck, test and build.
 
 ## Verification
 

@@ -32,8 +32,9 @@ async function isFile(path: string): Promise<boolean> {
   }
 }
 
+/** A composed profile declares areas instead of build systems, and detects nothing itself. */
 function declared(profile: ProfileDefinition, id: BuildSystemId): BuildSystem | undefined {
-  return profile.buildSystems[id];
+  return profile.buildSystems?.[id];
 }
 
 /**
@@ -104,4 +105,34 @@ export async function selectBuildSystem(
 
   const buildSystem = declared(profile, id) as BuildSystem;
   return { ok: true, id, buildSystem, runner: await resolveRunner(buildSystem, root, platform) };
+}
+
+export interface EvidenceReport {
+  /** Supporting files that exist in the root. */
+  found: string[];
+  /** Supporting files that do not. Their absence disproves nothing. */
+  missing: string[];
+}
+
+/**
+ * Reports supporting evidence for a profile without acting on it.
+ *
+ * Evidence raises or lowers confidence for a reader. It never selects a build
+ * system, never causes a failure, and its absence never disproves the profile: a
+ * Next.js project, for instance, is valid with no config file at all.
+ */
+export async function checkEvidence(profile: ProfileDefinition, root: string): Promise<EvidenceReport> {
+  const report: EvidenceReport = { found: [], missing: [] };
+  for (const file of profile.evidence ?? []) {
+    (await isFile(join(root, file)) ? report.found : report.missing).push(file);
+  }
+  return report;
+}
+
+export async function directoryExists(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
+  }
 }

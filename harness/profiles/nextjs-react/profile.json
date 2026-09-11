@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "nextjs-react",
+  "status": "experimental",
+  "description": "Next.js App Router and React applications on Node. Supplies only the commands such a project reliably has, which is fewer than it first appears.",
+  "buildSystems": {
+    "node": {
+      "manifests": ["package.json"],
+      "runner": { "fallback": "npm" },
+      "commands": {
+        "build": ["run", "build"],
+        "security": ["audit", "--omit=dev"]
+      }
+    }
+  },
+  "evidence": ["next.config.js", "next.config.mjs", "next.config.ts"],
+  "architecture": [
+    "App Router routes live under app/, with route segments owning their own layout and loading states.",
+    "Server components are the default; a client component is an explicit, justified choice.",
+    "Data is fetched on the server where possible, rather than round-tripping through the client.",
+    "Types describe the real shape of data rather than widening to any at the boundary.",
+    "Accessibility and responsive behavior are part of the work, not a later cleanup.",
+    "API contracts are owned by the backend; the client adapts to them rather than the reverse."
+  ],
+  "limitations": [
+    "A package.json proves a Node layout only. It does not prove that Next.js, React, or TypeScript are installed.",
+    "No lint default is supplied, because a Next.js project may use ESLint, Biome, or no linter at all.",
+    "No typecheck default is supplied, because create-next-app scaffolds no typecheck script. Projects that type-check in CI usually need next typegen before tsc --noEmit, since route types are otherwise only generated during dev or build.",
+    "No test or integration-test default is supplied. No test runner is scaffolded, and Playwright is never assumed to be present.",
+    "next lint is not used. It is absent from the current Next.js CLI, so linting is left to the project's own script.",
+    "Resolution never runs a script, reads package.json contents, or verifies that a declared script exists."
+  ]
+}

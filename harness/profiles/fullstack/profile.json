@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "fullstack",
+  "status": "experimental",
+  "description": "A repository holding a backend and a frontend in separate directories, each resolved by its own profile.",
+  "areas": [
+    {
+      "id": "backend",
+      "title": "Backend service",
+      "path": "backend",
+      "profile": "java-spring",
+      "roles": ["backend-engineer", "database-reviewer"]
+    },
+    {
+      "id": "frontend",
+      "title": "Frontend application",
+      "path": "frontend",
+      "profile": "nextjs-react",
+      "roles": ["frontend-engineer"]
+    }
+  ],
+  "architecture": [
+    "Each area keeps its own build system, conventions, and quality gates.",
+    "The API contract is the boundary; a change to it affects both areas and needs integration review.",
+    "A change confined to one area is ordinary single-area work and needs no coordination.",
+    "Determining affected areas precedes deciding which roles are involved."
+  ],
+  "limitations": [
+    "Supplies no commands. A composed project must declare commands that cover both areas explicitly.",
+    "Area directories are fixed by this definition. A repository laid out differently needs its own profile.",
+    "project.build_system cannot be used with a composed profile, because there is more than one build root.",
+    "Composition is one level deep; an area profile must itself declare build systems.",
+    "Determining affected areas is path analysis only. It does not prove that an area is unaffected in behavior.",
+    "Multi-repository composition remains unsupported and is rejected by the project schema."
+  ]
+}

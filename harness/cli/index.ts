@@ -22,6 +22,12 @@ async function resolveFrom(argument: string | undefined) {
   return { ok: true as const, resolved: resolution.resolved, root };
 }
 
+function describeRunner(availability: string): string {
+  return availability === 'wrapper-present'
+    ? 'wrapper present, not executed'
+    : 'no wrapper; falls back to PATH, which was not verified';
+}
+
 function report(issues: ConfigIssue[]): void {
   for (const issue of issues) console.error(`${issue.path} [${issue.code}] ${issue.message}`);
   process.exitCode = 1;
@@ -32,19 +38,32 @@ async function validate(argument: string | undefined): Promise<void> {
   if (!outcome.ok) return report(outcome.issues);
 
   const { root } = outcome;
-  const { profile, buildSystem, runner, commands, config } = outcome.resolved;
+  const { profile, buildSystem, runner, commands, config, areas, evidence } = outcome.resolved;
   const context = await checkContextFiles(config, root);
   if (context.length) return report(context);
 
-  const selected = config.project.build_system ? 'explicitly selected' : 'detected';
-  const availability = runner.availability === 'wrapper-present'
-    ? 'wrapper present, not executed'
-    : 'no wrapper; falls back to PATH, which was not verified';
-
   console.log('Valid project configuration and context references.');
   console.log(`Profile: ${profile.id} (${profile.status})`);
-  console.log(`Build system: ${buildSystem} (${selected})`);
-  console.log(`Runner: ${runner.command} (${availability})`);
+
+  if (buildSystem && runner) {
+    const selected = config.project.build_system ? 'explicitly selected' : 'detected';
+    console.log(`Build system: ${buildSystem} (${selected})`);
+    console.log(`Runner: ${runner.command} (${describeRunner(runner.availability)})`);
+  }
+
+  for (const area of areas) {
+    console.log(`Area ${area.id}: ${area.path} resolved by ${area.profile.id} (${area.buildSystem})`);
+    console.log(`  runner: ${area.runner.command} (${describeRunner(area.runner.availability)})`);
+    console.log(`  roles: ${area.roles.join(', ')}`);
+  }
+
+  if (evidence.found.length > 0 || evidence.missing.length > 0) {
+    console.log(`Supporting evidence present: ${evidence.found.join(', ') || 'none'}`);
+    if (evidence.missing.length > 0) {
+      console.log(`  absent (which disproves nothing): ${evidence.missing.join(', ')}`);
+    }
+  }
+
   for (const [slot, command] of Object.entries(commands)) {
     console.log(`  ${slot} [${command.source}] ${command.command}`);
   }
@@ -60,7 +79,8 @@ async function quality(argument: string | undefined): Promise<void> {
   const statuses = initialStatuses(plan);
   const counts = summarize(statuses);
 
-  console.log(`Quality pipeline for profile ${outcome.resolved.profile.id} (${outcome.resolved.buildSystem}).`);
+  const scope = outcome.resolved.buildSystem ?? `${outcome.resolved.areas.length} composed areas`;
+  console.log(`Quality pipeline for profile ${outcome.resolved.profile.id} (${scope}).`);
   console.log('');
   console.log(`${'stage'.padEnd(19)}${'readiness'.padEnd(16)}${'source'.padEnd(9)}command`);
   for (const entry of plan) {
