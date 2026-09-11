@@ -47,3 +47,6 @@ export type { WorkflowDefinition } from './config/workflow.generated.js';
 export type { EvalDefinition } from './config/eval.generated.js';
 export type { RunRecord } from './config/run.generated.js';
 export type { HandoffRecord } from './config/handoff.generated.js';
+export { architecture, architectureErrors, getArchitectureNode } from './core/architecture/registry.js';
+export type { ArchitectureEdge, ArchitectureNode } from './core/architecture/registry.js';
+export type { ArchitectureDefinition } from './config/architecture.generated.js';

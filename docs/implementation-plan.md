@@ -13,8 +13,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 6 | Next.js and full-stack profiles | Implemented |
 | 7 | Next.js web package and safe catalog | Implemented |
 | 8 | Overview and responsive console navigation | Implemented |
-| 9 | Architecture and workflow visualizations | Next |
-| 10 | Building-block pages and Config Explorer | Planned |
+| 9 | Architecture and workflow visualizations | Implemented |
+| 10 | Building-block pages and Config Explorer | Next |
 | 11 | Quality, evals, example runs, adoption simulator, docs | Planned |
 | 12 | Integrated tests, accessibility, responsive QA | Planned |
 
@@ -173,15 +173,36 @@ bounded phases, inspecting existing code and verifying each change before the ne
   window resize had no effect here, so the narrow layout was measured inside a 428px
   iframe, which has its own viewport for media queries.
 
-## Phase 9 acceptance criteria
+## Phase 9 decisions
 
-Add the architecture and workflow visualizations with React Flow, verifying its
-version at implementation time. Nodes must be non-editable in v1: this is a
-visualization, not a diagram editor. Both diagrams must be built from the real
-definitions rather than a hand-drawn graph, must use `fitView` and stay usable at
-narrow widths, and must offer an accessible text alternative so the content does not
-depend on the canvas. Clicking a node reveals what it is, why it exists, its
-responsibilities, inputs and outputs, and related roles, skills and tools.
+- The architecture map became a versioned harness contract rather than a graph drawn
+  in the web application, so its nodes can reference real roles, procedures and
+  capabilities and the registry can refuse a map that names something the harness
+  does not define. A diagram that can drift from the system it describes is worse
+  than none, because it is believed.
+- Node positions are declared as `row` and `column` and centred by the renderer,
+  which avoids a layout engine and keeps the map reviewable as data.
+- `fitView` is clamped so it cannot zoom below 0.75. A twelve-state lifecycle does
+  not fit a viewport at a legible size, and reading a node matters more than seeing
+  the whole shape at once; the text list carries the rest.
+- The text alternative is always visible rather than hidden behind assistive
+  technology, so the content never depends on the canvas.
+- Client and server were separated explicitly after the build refused a client
+  component that reached `@ax-harness/core`. `lib/graph-types.ts` holds shapes and
+  pure helpers for the client; `lib/graph.ts` builds graphs on the server.
+- The Phase 7 boundary test scanned direct references only. It now follows local
+  imports transitively from every client component, and asserts that the only modules
+  importing the harness are `lib/catalog.ts` and `lib/graph.ts`.
+
+## Phase 10 acceptance criteria
+
+Add the profiles, agents, skills, MCP/tools and policies pages, and the configuration
+explorer. Every page must render from the catalog rather than from prose, with status
+badges taken from each definition. The explorer must show a definition's real source
+and must reach nothing outside the allowlist; a file tree in the UI is a view of the
+catalog, never of the filesystem. The policies page must present the capability matrix
+as the definitions state it, including what is denied to every role. Navigation
+entries become links only as their pages land.
 
 ## Verification
 

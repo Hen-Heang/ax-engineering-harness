@@ -4,7 +4,7 @@ A reusable engineering layer for reliable AI-assisted software development.
 
 Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-**Experimental / Learning Project — Phase 8 console navigation and Overview.**
+**Experimental / Learning Project — Phase 9 architecture and workflow diagrams.**
 
 This backend-first project explores how human direction, context, reusable
 procedures, controlled tools, verification, and evaluation improve AI-assisted
@@ -27,8 +27,9 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 - Quality pipeline planning that keeps passed, failed, unavailable and unrun
   distinct, a lifecycle with bounded retries, eval scoring, and handoff checking.
 - A local read-only CLI, typecheck, automated tests, and package build.
-- An `apps/web` console with persistent navigation, a mobile sheet, and an Overview
-  page whose status labels come from the definitions rather than a maintained list.
+- An `apps/web` console with persistent navigation, a mobile sheet, an Overview page
+  whose status labels come from the definitions, and read-only architecture and
+  workflow diagrams built from those definitions with a full text alternative.
   Tests assert the console can reach no repository file.
 
 **Nothing executes.** Gate execution, MCP connections, live runs, policy
@@ -126,8 +127,9 @@ and forbidden behavior is disqualifying rather than a deduction. Run records mus
 declare whether they are an example or a real execution, and an unmeasured value is
 absent rather than zero.
 
-See [quality gates and evals](docs/quality-and-evals.md) and
-[workflow and handoff](docs/workflow.md).
+See [quality gates and evals](docs/quality-and-evals.md),
+[workflow and handoff](docs/workflow.md), and
+[the visualizations](docs/visualizations.md).
 
 ## Repository structure
 
@@ -141,6 +143,7 @@ harness/policies/     Capability vocabulary
 harness/adapters/     Vendor entrypoint definitions
 harness/quality/      Quality pipeline definition
 harness/workflow/     Lifecycle definition
+harness/architecture/ Architecture map definition
 harness/evals/        Evaluation definitions
 harness/runs/         Example run records, never real executions
 apps/web/             AX Engineering Console, rendering the allowlisted catalog
@@ -178,8 +181,8 @@ explorer, and the adoption simulator arrive in later phases; demo runs and evals
 stay labelled as examples. See [the console](docs/web-console.md).
 
 The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
-Next: the architecture and workflow visualizations, then the building-block pages
-and the configuration explorer.
+Next: the building-block pages and the configuration explorer, then quality, evals,
+runs, adoption and docs.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or

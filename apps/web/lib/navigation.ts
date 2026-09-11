@@ -32,8 +32,8 @@ export const navigation: NavSection[] = [
     label: null,
     items: [
       { label: 'Overview', href: '/', icon: Layers, phase: 8 },
-      { label: 'Architecture', href: null, icon: Network, phase: 9 },
-      { label: 'Workflow', href: null, icon: Waypoints, phase: 9 },
+      { label: 'Architecture', href: '/architecture', icon: Network, phase: 9 },
+      { label: 'Workflow', href: '/workflow', icon: Waypoints, phase: 9 },
     ],
   },
   {

@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/architecture/v1",
+  "title": "ArchitectureDefinition",
+  "description": "AX Harness v1 architecture map. Declares the parts of the harness and how a request flows between them. Nodes reference the real roles, procedures and capabilities they stand for, so the map cannot describe something the harness does not define.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "description", "nodes", "edges"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/definitions/identifier" },
+    "description": { "$ref": "#/definitions/text" },
+    "nodes": { "type": "array", "minItems": 2, "maxItems": 64, "items": { "$ref": "#/definitions/node" } },
+    "edges": { "type": "array", "minItems": 1, "maxItems": 128, "items": { "$ref": "#/definitions/edge" } }
+  },
+  "definitions": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "kind", "row", "column", "summary", "why", "responsibilities", "inputs", "outputs"],
+      "properties": {
+        "id": { "$ref": "#/definitions/identifier" },
+        "title": { "$ref": "#/definitions/line" },
+        "kind": {
+          "enum": ["actor", "artifact", "core", "agent", "tools", "quality", "review"],
+          "description": "Drives presentation only. It grants nothing and implies no capability."
+        },
+        "row": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Layer from the top of the map." },
+        "column": { "type": "integer", "minimum": 0, "maximum": 15, "description": "Position within the layer. A renderer centres each row." },
+        "summary": { "$ref": "#/definitions/text", "description": "What this part is." },
+        "why": { "$ref": "#/definitions/text", "description": "Why it exists, rather than what it contains." },
+        "responsibilities": { "$ref": "#/definitions/notes" },
+        "inputs": { "$ref": "#/definitions/notes" },
+        "outputs": { "$ref": "#/definitions/notes" },
+        "agents": { "$ref": "#/definitions/identifiers", "description": "Roles this part stands for. Each must be a registered agent." },
+        "skills": { "$ref": "#/definitions/identifiers", "description": "Procedures used here. Each must be a registered skill." },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,47}$" },
+          "description": "Capabilities involved. Each must exist in the policy vocabulary."
+        },
+        "reference": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id"],
+          "description": "A definition whose real source a reader can inspect for this node.",
+          "properties": {
+            "kind": { "enum": ["profile", "agent", "skill", "adapter", "policy", "pipeline", "workflow", "eval", "run"] },
+            "id": { "$ref": "#/definitions/identifier" }
+          }
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "kind"],
+      "properties": {
+        "from": { "$ref": "#/definitions/identifier" },
+        "to": { "$ref": "#/definitions/identifier" },
+        "kind": {
+          "enum": ["flow", "failure", "feedback"],
+          "description": "flow is the forward path, failure returns for rework, feedback improves the harness itself."
+        },
+        "label": { "$ref": "#/definitions/line" }
+      }
+    },
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "identifiers": { "type": "array", "minItems": 1, "maxItems": 32, "items": { "$ref": "#/definitions/identifier" } },
+    "line": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "note": { "type": "string", "minLength": 1, "maxLength": 320, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "notes": { "type": "array", "minItems": 1, "maxItems": 32, "items": { "$ref": "#/definitions/note" } }
+  }
+}
