@@ -35,3 +35,9 @@ test-results/
 .env.*
 !.env.example
 .ax/runs/
+
+# Vercel
+.vercel
+
+.vercel
+.env*
