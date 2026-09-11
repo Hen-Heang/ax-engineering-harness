@@ -1,0 +1,42 @@
+# Phase 2 declaration: profile identifiers are not yet resolved.
+schemaVersion: 1
+project:
+  name: ax-engineering-harness
+  mode: single-repo
+  profile: harness-tooling
+context:
+  architecture: docs/architecture.md
+commands:
+  build: npm run build
+  typecheck: npm run typecheck
+  test: npm test
+  security: npm audit --omit=dev
+tools:
+  codebase:
+    enabled: true
+  docs:
+    enabled: true
+  github:
+    enabled: false
+  database:
+    enabled: false
+    mode: metadata-only
+permissions:
+  direct_main_push: false
+  force_push: false
+  production_deploy: false
+  database_write: false
+  secrets_access: false
+quality:
+  build: true
+  lint: false
+  typecheck: true
+  tests: true
+  integration_tests: false
+  security: true
+  review: true
+  eval: false
+  human_approval: true
+limits:
+  max_retries: 2
+  max_duration_seconds: 600

@@ -1,27 +1,112 @@
-# dev-lab
+# AX Engineering Harness
 
-My personal lab for practice projects and learning. Each folder is an independent project.
+A reusable engineering layer for reliable AI-assisted software development.
 
-| Project | Description | Stack |
-|---------|-------------|-------|
-| [heang-api-center](heang-api-center/) | API practice project | Spring Boot, Maven |
-| [heang-dev-lab](heang-dev-lab/) | Store admin system (Korean enterprise stack) | Spring Boot, MyBatis, PostgreSQL, Thymeleaf, Maven |
-| [spring-boot-lab](spring-boot-lab/) | Spring Boot learning path, organized by topic (web, data, security, messaging, testing, cloud, AI) | Spring Boot |
-| [AuthHub](AuthHub/) | Authentication hub — multi-module project (common-api, security-api, todoapi); legacy JWT practice lives under `AuthHub/legacy/spring-jwt-auth` | Spring Boot, Gradle |
+Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-## Moved out
+**Experimental / Learning Project — Phase 2 configuration foundation.**
 
-These used to live here but were extracted into their own standalone repos (each with full history preserved) because bundling everything into one IntelliJ project made per-project source roots/SDKs impossible to configure correctly:
+This backend-first project explores how human direction, context, reusable
+procedures, controlled tools, verification, and evaluation improve AI-assisted
+engineering. It builds on Java, Spring Boot, SQL, and PostgreSQL while learning
+and validating agent harnesses, MCP, evaluation, and delivery practices.
 
-- `java-core-mastery-lab` → `E:\API\java-core-mastery-lab`
-- `dev-learning-notes & AI` → `E:\API\dev-learning-notes & AI`
+## What works today
 
-## Known issue
+- Versioned project JSON Schema and generated TypeScript types.
+- YAML validation, required gate-command checks, and explicit high-impact denials.
+- Context-reference checks including missing files and symlink escape.
+- A local read-only CLI, typecheck, automated tests, and package build.
 
-`spring-boot-lab/AuthHub` is a stale duplicate of the root `AuthHub` that has diverged with unique, unmerged work (OAuth2/OTP auth flow) not present in the root copy (which has its own unique MFA/audit work instead). Neither has been deleted — needs a manual merge decision before cleanup.
+Profile resolution, policy enforcement, agents, MCP connections, quality execution,
+evals, live runs, and the website are **planned**. No production maturity or live
+metrics are claimed. Validation does not execute commands or authorize tools.
 
-## Notes
+## Architecture
 
-- Each Spring project has its own Maven wrapper — run with `mvnw.cmd spring-boot:run` (Windows) from inside the project folder.
-- Open each project separately in IntelliJ for correct Maven/Gradle detection.
-- Combined from four separate repositories in June 2026; older commit history lives in the archived original repos.
+```text
+Human → AX Harness Core → Agent roles → Controlled tools → Software
+                  ↑                                  ↓
+                  └──── Feedback ← Verification ─────┘
+
+AX Harness Core → Codex adapter → AGENTS.md
+                → Claude adapter → CLAUDE.md
+```
+
+Core contracts are vendor-neutral. Profiles describe stack conventions; agents
+are roles; skills are procedures; tools provide capabilities; policies bound
+access. Tests evaluate software; agent evals will assess engineering behavior.
+Adapters are planned translations of shared instructions.
+
+## Quick start
+
+Use Node.js 24 LTS and npm. Existing Java projects retain their own toolchains.
+
+```sh
+npm ci
+npm run ax -- validate
+npm run check
+```
+
+`check` runs the new Harness typecheck, tests, and build, not legacy Java builds.
+
+## Applying to another project
+
+Create `.ax/project.yaml` using the [current declaration](.ax/project.yaml) as a
+structural example, replacing commands and context references with your own.
+Validate it from this checkout:
+
+```sh
+npm run ax -- validate /path/to/your-project/.ax/project.yaml
+```
+
+Profile identifiers are currently syntax-checked only. See
+[configuration documentation](docs/project-configuration.md) for fields and limits.
+
+## Target profiles
+
+| Profile | Status |
+| --- | --- |
+| Java / Spring, Maven / Gradle | Planned — next phase |
+| Next.js / React | Planned |
+| Full-stack composition | Planned |
+| Multi-repository execution | Planned; rejected by current schema |
+
+## Repository structure
+
+```text
+.ax/                  Repository configuration declaration
+harness/              Schema, validator, CLI, context checks, tests
+docs/                 Architecture, audit, configuration, implementation plan
+AGENTS.md             Instructions and preservation boundaries
+HISTORY.md            Original dev-lab README
+AuthHub/              Preserved independent Gradle projects
+heang-api-center/     Preserved Maven project
+heang-dev-lab/        Preserved Maven project
+spring-boot-lab/      Preserved labs, including divergent AuthHub
+```
+
+`apps/web`, profiles, integrations, and additional core capabilities arrive in
+their implementation phases. All existing project trees remain in place.
+
+## Safety philosophy
+
+Least privilege, explicit tools, isolated work, quality gates, and human approval.
+V1 declarations forbid main/force pushes, production deployment, DB writes, and
+secrets access. They do not sandbox external agents: enforcement requires the
+future controlled execution/tool layer. Never put credentials in configuration.
+The future public catalog must only include explicitly allowlisted safe files.
+
+## Web showcase and roadmap
+
+The planned **AX Engineering Console** in this repository's `apps/web` will offer
+architecture/workflow diagrams, Config Explorer, building-block documentation,
+permission matrices, and an adoption simulator. Demo runs/evals will be labeled.
+
+The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
+Next: Java/Spring profiles, roles, skills, policies, quality/evaluation foundations,
+then the Next.js console and responsive verification.
+
+See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
+[history](HISTORY.md). This is an evolving learning project, not an expertise or
+production-adoption claim. Licensing for distribution remains to be decided.
