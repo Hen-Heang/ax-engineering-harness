@@ -307,9 +307,10 @@ Other deployment facts, checked rather than assumed:
 | Runtime environment variables | none; no `process.env` in shipped code |
 | Rendering | every route prerendered; no request-time data access |
 
-### Before anything is published
+### Licensing
 
-Distribution licensing is still undecided, and this repository preserves inherited
-tutorial-derived projects. That question belongs to the owner and should be settled
-before the site is public, even though the console publishes nothing from those trees
-and a test asserts it.
+The project is MIT licensed. The grant covers the work written here and deliberately
+stops short of the preserved learning projects, which contain tutorial-derived
+material the author does not hold rights to; `NOTICE` states that boundary. Nothing
+from those directories reaches the console: a test asserts the catalogue never
+mentions them, and `.vercelignore` keeps them out of the upload.

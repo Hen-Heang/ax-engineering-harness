@@ -2,6 +2,7 @@
   "name": "ax-engineering-harness",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "workspaces": [
     "harness",
     "apps/web"

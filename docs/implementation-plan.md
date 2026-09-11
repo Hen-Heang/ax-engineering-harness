@@ -254,11 +254,21 @@ bounded phases, inspecting existing code and verifying each change before the ne
 
 ## After the twelve phases
 
-Every planned phase is implemented. What remains is execution: running gates,
-connecting MCP tools, recording real runs, and enforcing policy at the point of
-access. None of it exists, and no part of the repository claims otherwise. The next
-piece of work should be a controlled execution layer, at which point the run schema's
-refusal of a `recorded` record is removed deliberately rather than by accident.
+Every planned phase is implemented. Two questions left open through the phases are
+now settled:
+
+- **Licensing.** The project is MIT licensed. The grant is scoped in `NOTICE`: it
+  covers the work written here and stops short of the preserved learning projects,
+  which contain tutorial-derived material the author does not hold rights to.
+- **Deployment.** The console is deployed and publicly reachable. The build works
+  because the root `prepare` script compiles the harness during install, so the
+  platform default of `next build` in `apps/web` finds the workspace package.
+
+What remains is execution: running gates, connecting MCP tools, recording real runs,
+and enforcing policy at the point of access. None of it exists, and no part of the
+repository claims otherwise. The next piece of work should be a controlled execution
+layer, at which point the run schema's refusal of a `recorded` record is removed
+deliberately rather than by accident.
 
 ## Verification
 

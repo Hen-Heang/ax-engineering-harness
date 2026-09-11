@@ -1,0 +1,38 @@
+AX Engineering Harness
+Copyright (c) 2026 Hen Heang
+
+The MIT licence in LICENSE covers the work written for this project:
+
+  harness/        the vendor-neutral harness package and its definitions
+  apps/web/       the AX Engineering Console
+  docs/           the project documentation
+  .ax/            this repository's own declaration
+  root tooling    package.json, tsconfig.base.json, and similar files
+  AGENTS.md, CLAUDE.md, README.md, HISTORY.md
+
+It does not extend to material this project did not author.
+
+Preserved learning projects
+---------------------------
+
+  AuthHub/
+  heang-api-center/
+  heang-dev-lab/
+  spring-boot-lab/
+
+These predate the harness and are kept for historical reference. They were
+written while following tutorials, courses and framework documentation, so
+parts of them derive from third-party material. Granting an MIT licence over
+this repository does not transfer rights the author never held: those
+directories retain whatever terms their original sources carry, and anyone
+reusing code from them should check the original source rather than relying
+on the licence at the root of this repository.
+
+Nothing from these directories is published by the console. A test asserts
+that the rendered catalogue contains no reference to them, and .vercelignore
+keeps them out of any deployment upload.
+
+Dependencies
+------------
+
+Third-party packages installed from npm remain under their own licences.

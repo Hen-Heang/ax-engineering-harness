@@ -191,4 +191,16 @@ connections, real runs and policy enforcement, none of which exist yet.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or
-production-adoption claim. Licensing for distribution remains to be decided.
+production-adoption claim.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).
+
+That covers the work written for this project: `harness/`, `apps/web/`, `docs/`,
+`.ax/` and the root tooling. It does not extend to the preserved learning projects
+in `AuthHub/`, `heang-api-center/`, `heang-dev-lab/` and `spring-boot-lab/`, which
+predate the harness and contain material derived from tutorials and framework
+documentation. Those directories keep whatever terms their original sources carry;
+[NOTICE](NOTICE) explains the boundary, and nothing from them is published by the
+console.
