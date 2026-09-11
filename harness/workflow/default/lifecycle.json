@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "id": "default",
+  "description": "Generic engineering lifecycle. Forward transitions are narrow on purpose, and a failure returns to the state that can actually fix the problem.",
+  "initial": "requirement",
+  "states": [
+    {
+      "id": "requirement",
+      "title": "Requirement",
+      "description": "A human states what is wanted and why.",
+      "agents": [],
+      "next": ["load-context"]
+    },
+    {
+      "id": "load-context",
+      "title": "Load context",
+      "description": "Instructions, project declaration, profile, and declared context documents are loaded.",
+      "agents": [],
+      "next": ["investigate"]
+    },
+    {
+      "id": "investigate",
+      "title": "Investigate",
+      "description": "Establish what is actually true in the codebase before planning.",
+      "agents": ["investigator"],
+      "next": ["plan"]
+    },
+    {
+      "id": "plan",
+      "title": "Plan",
+      "description": "Turn findings into a bounded, ordered, verifiable plan.",
+      "agents": ["planner"],
+      "next": ["implement"]
+    },
+    {
+      "id": "implement",
+      "title": "Implement",
+      "description": "Make the smallest coherent change on a working branch.",
+      "agents": ["backend-engineer", "frontend-engineer"],
+      "next": ["verify"]
+    },
+    {
+      "id": "verify",
+      "title": "Verify",
+      "description": "Run the declared quality gates and report their real outcomes.",
+      "agents": ["qa-reviewer"],
+      "next": ["review"],
+      "onFailure": "implement"
+    },
+    {
+      "id": "review",
+      "title": "Review",
+      "description": "An independent reviewer assesses the change.",
+      "agents": ["integration-reviewer", "security-reviewer", "database-reviewer"],
+      "next": ["evaluate"],
+      "onFailure": "implement"
+    },
+    {
+      "id": "evaluate",
+      "title": "Evaluate",
+      "description": "Assess how the agent worked, separately from whether the software passes.",
+      "agents": [],
+      "next": ["human-approval"]
+    },
+    {
+      "id": "human-approval",
+      "title": "Human approval",
+      "description": "A person accepts or rejects the change. Rejection returns to planning, not to implementation.",
+      "agents": [],
+      "next": ["pull-request"],
+      "onFailure": "plan"
+    },
+    {
+      "id": "pull-request",
+      "title": "Pull request and CI",
+      "description": "The change is proposed for review and continuous integration runs.",
+      "agents": ["backend-engineer", "frontend-engineer"],
+      "next": ["handoff"],
+      "onFailure": "implement"
+    },
+    {
+      "id": "handoff",
+      "title": "Handoff",
+      "description": "Record goal, status, decisions, blockers, failed attempts, and next steps.",
+      "agents": [],
+      "next": ["feedback"]
+    },
+    {
+      "id": "feedback",
+      "title": "Feedback",
+      "description": "What was learned updates instructions, profiles, skills, or evals. Terminal for one task.",
+      "agents": [],
+      "next": []
+    }
+  ]
+}

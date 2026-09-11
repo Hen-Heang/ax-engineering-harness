@@ -28,3 +28,13 @@ test('CLI prints the capability matrix and states that nothing enforces it', () 
   assert.match(result.stdout, /create_pull_request.*human approval required/);
   assert.equal(run('policy', 'extra').status, 2);
 });
+
+test('CLI prints the quality plan and refuses to call an unrun gate a pass', () => {
+  const result = run('quality');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Pipeline passed: false/);
+  assert.match(result.stdout, /unrun is not a pass/);
+  assert.match(result.stdout, /lint\s+not-applicable/);
+  assert.match(result.stdout, /build\s+ready\s+project\s+npm run build/);
+  assert.equal(run('quality', 'one', 'two').status, 2);
+});

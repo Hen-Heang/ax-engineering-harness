@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/run/v1",
+  "title": "RunRecord",
+  "description": "AX Harness v1 run record. Describes one task execution. The kind field is required so an illustrative record can never be mistaken for a real one, and measurements are optional because an absent measurement means unmeasured, never zero.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "kind", "task", "agent", "profile", "status", "retries", "tools", "filesRead", "filesChanged", "gates", "notes"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/definitions/identifier" },
+    "kind": {
+      "enum": ["example", "recorded"],
+      "description": "example is illustrative and was never executed. recorded requires a real execution, which no current component can produce."
+    },
+    "task": { "$ref": "#/definitions/text" },
+    "agent": { "$ref": "#/definitions/identifier", "description": "Role that owned the task." },
+    "profile": { "$ref": "#/definitions/identifier" },
+    "status": { "enum": ["completed", "failed", "blocked", "abandoned"] },
+    "durationSeconds": { "type": "integer", "minimum": 0, "description": "Omit when the duration was not measured." },
+    "retries": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "tools": { "type": "array", "minItems": 0, "maxItems": 16, "items": { "enum": ["codebase", "docs", "github", "database"] } },
+    "filesRead": { "$ref": "#/definitions/paths" },
+    "filesChanged": { "$ref": "#/definitions/paths" },
+    "gates": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "outcome"],
+        "properties": {
+          "stage": { "$ref": "#/definitions/identifier" },
+          "outcome": {
+            "enum": ["passed", "failed", "unavailable", "unrun"],
+            "description": "unavailable and unrun are distinct from passed and must never be reported as a pass."
+          }
+        }
+      }
+    },
+    "eval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "percent", "passed"],
+      "properties": {
+        "id": { "$ref": "#/definitions/identifier" },
+        "percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "passed": { "type": "boolean" }
+      }
+    },
+    "measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Omit any field that was not measured. An absent field means unmeasured, not zero.",
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 },
+        "costUsd": { "type": "number", "minimum": 0 }
+      }
+    },
+    "notes": { "$ref": "#/definitions/notes" }
+  },
+  "definitions": {
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[\\\\:\\u0000-\\u001f]).+$"
+    },
+    "paths": { "type": "array", "minItems": 0, "maxItems": 64, "items": { "$ref": "#/definitions/path" } },
+    "note": { "type": "string", "minLength": 1, "maxLength": 320, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "notes": { "type": "array", "minItems": 1, "maxItems": 32, "items": { "$ref": "#/definitions/note" } }
+  }
+}

@@ -4,7 +4,7 @@ A reusable engineering layer for reliable AI-assisted software development.
 
 Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-**Experimental / Learning Project — Phase 4 roles, procedures and policies.**
+**Experimental / Learning Project — Phase 5 quality, workflow and eval foundations.**
 
 This backend-first project explores how human direction, context, reusable
 procedures, controlled tools, verification, and evaluation improve AI-assisted
@@ -14,7 +14,7 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 ## What works today
 
 - Versioned JSON Schemas with generated TypeScript types for projects, profiles,
-  agents, skills, policies, and adapters.
+  agents, skills, policies, adapters, pipelines, workflows, evals, runs and handoffs.
 - YAML validation, required gate-command checks, and explicit high-impact denials.
 - Context-reference checks including missing files and symlink escape.
 - Profile resolution against a built-in registry; unknown profiles fail.
@@ -22,12 +22,14 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
   wrapper forms. Ambiguous evidence fails instead of guessing.
 - Eight roles, ten procedures, a capability vocabulary, and two vendor adapters,
   with cross-definition checks that keep them coherent.
+- Quality pipeline planning that keeps passed, failed, unavailable and unrun
+  distinct, a lifecycle with bounded retries, eval scoring, and handoff checking.
 - A local read-only CLI, typecheck, automated tests, and package build.
 
-Policy **enforcement**, MCP connections, quality execution, evals, live runs, and
-the website are **planned**. Defining a role does not start an agent, and asking
-whether a capability is allowed grants no access. No production maturity or live
-metrics are claimed. Nothing in this repository executes a project's commands.
+**Nothing executes.** Gate execution, MCP connections, live runs, policy
+enforcement, and the website are **planned**. Defining a role starts no agent,
+planning a pipeline runs no command, and every gate this harness plans is `unrun`.
+No production maturity or live metrics are claimed.
 
 ## Architecture
 
@@ -42,7 +44,7 @@ AX Harness Core → Codex adapter → AGENTS.md
 
 Core contracts are vendor-neutral. Profiles describe stack conventions; agents
 are roles; skills are procedures; tools provide capabilities; policies bound
-access. Tests evaluate software; agent evals will assess engineering behavior.
+access. Tests evaluate software; evals evaluate agent behavior.
 
 ## Quick start
 
@@ -51,6 +53,7 @@ Use Node.js 24 LTS and npm. Existing Java projects retain their own toolchains.
 ```sh
 npm ci
 npm run ax -- validate      # resolve and check a project declaration
+npm run ax -- quality       # plan the quality pipeline for a project
 npm run ax -- policy        # print the capability matrix
 npm run check               # typecheck, tests, build
 ```
@@ -101,8 +104,21 @@ request requires human approval. Run `npm run ax -- policy` to print the matrix
 from the definitions themselves.
 
 See [agents and skills](docs/agents-and-skills.md), [policies](docs/policies.md),
-and [adapters](docs/adapters.md). These are definitions to follow, not a runtime:
-the harness has no execution engine and enforces nothing.
+and [adapters](docs/adapters.md).
+
+## Quality, workflow and evaluation
+
+Gate outcomes keep **passed, failed, unavailable and unrun distinct**; a gate
+nobody could run and a gate nobody did run have not passed, and a pipeline that
+gates nothing does not report success. The lifecycle permits only declared
+transitions, and a failure path is bounded by the project's declared retry limit.
+Evals assess agent behavior rather than software: a missing criterion scores zero,
+and forbidden behavior is disqualifying rather than a deduction. Run records must
+declare whether they are an example or a real execution, and an unmeasured value is
+absent rather than zero.
+
+See [quality gates and evals](docs/quality-and-evals.md) and
+[workflow and handoff](docs/workflow.md).
 
 ## Repository structure
 
@@ -114,6 +130,10 @@ harness/agents/       Role definitions
 harness/skills/       Procedure definitions
 harness/policies/     Capability vocabulary
 harness/adapters/     Vendor entrypoint definitions
+harness/quality/      Quality pipeline definition
+harness/workflow/     Lifecycle definition
+harness/evals/        Evaluation definitions
+harness/runs/         Example run records, never real executions
 docs/                 Architecture, audit, configuration, building blocks, plan
 AGENTS.md             Shared instructions and preservation boundaries
 CLAUDE.md             Claude Code adapter surface
@@ -145,8 +165,8 @@ architecture/workflow diagrams, Config Explorer, building-block documentation,
 permission matrices, and an adoption simulator. Demo runs/evals will be labeled.
 
 The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
-Next: quality gate and evaluation foundations, the Next.js profile, then the
-console and responsive verification.
+Next: the Next.js and full-stack profiles, then the console and responsive
+verification.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or

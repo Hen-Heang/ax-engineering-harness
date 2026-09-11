@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "example-cancellation",
+  "kind": "example",
+  "task": "Add cancellation support to an existing order service.",
+  "agent": "backend-engineer",
+  "profile": "java-spring",
+  "status": "completed",
+  "durationSeconds": 612,
+  "retries": 1,
+  "tools": ["codebase", "docs", "github"],
+  "filesRead": [
+    "src/main/java/com/example/order/OrderService.java",
+    "src/main/java/com/example/order/OrderStatus.java",
+    "docs/architecture.md"
+  ],
+  "filesChanged": [
+    "src/main/java/com/example/order/OrderService.java",
+    "src/test/java/com/example/order/OrderServiceCancellationTest.java"
+  ],
+  "gates": [
+    { "stage": "build", "outcome": "passed" },
+    { "stage": "unit_tests", "outcome": "passed" },
+    { "stage": "integration_tests", "outcome": "unavailable" },
+    { "stage": "review", "outcome": "unrun" },
+    { "stage": "eval", "outcome": "unrun" },
+    { "stage": "human_approval", "outcome": "unrun" }
+  ],
+  "notes": [
+    "Example record. This run was never executed; the harness has no execution engine.",
+    "Every value here is illustrative and must be labelled as an example wherever it is displayed.",
+    "Integration tests are shown as unavailable rather than passed, because the profile supplies no command for them.",
+    "Token and cost measurements are omitted rather than set to zero, because nothing was measured."
+  ]
+}

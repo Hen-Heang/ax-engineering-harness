@@ -9,8 +9,8 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 2 | Core package, project schema, validator, context checks, tests | Implemented |
 | 3 | Java/Spring profile and resolution | Implemented |
 | 4 | Agents, procedural skills, policies, vendor adapters | Implemented |
-| 5 | Quality, workflow, eval, run and handoff foundations | Next |
-| 6 | Next.js and full-stack profiles | Planned |
+| 5 | Quality, workflow, eval, run and handoff foundations | Implemented |
+| 6 | Next.js and full-stack profiles | Next |
 | 7 | Next.js web package and safe catalog | Planned |
 | 8 | Overview and responsive console navigation | Planned |
 | 9 | Architecture and workflow visualizations | Planned |
@@ -74,14 +74,43 @@ bounded phases, inspecting existing code and verifying each change before the ne
 - Every role and procedure is labelled experimental. The definitions are real; no
   runner exists, and none is implied by defining eight roles.
 
-## Phase 5 acceptance criteria
+## Phase 5 decisions
 
-Model the quality pipeline, evaluation, run records, and handoff as contracts with
-the same rigour. Gate results must keep passed, failed, unavailable, and unrun
-distinct, and a profile that supplies no command for an enabled gate must surface
-as unavailable rather than as a pass. Evals assess agent behavior and are separate
-from application tests. Run records and any cost or token field must be modelled
-without inventing values. Nothing may claim an execution occurred.
+- Readiness and outcome are separate ideas. `ready`, `unavailable`, `manual` and
+  `not-applicable` say whether a gate can be attempted; `passed`, `failed`,
+  `unavailable` and `unrun` say what happened. Being ready is not having passed.
+- A gate the project disabled is absent from the results rather than counted, and
+  `pipelinePassed` returns false for an empty pipeline, so a configuration that
+  gates nothing cannot report success by default.
+- `planQuality` keeps the `unavailable` branch even though resolution already
+  rejects an enabled gate with no command. The model must be able to express a gate
+  nobody could run, and the branch is tested directly.
+- A rejected human approval returns to `plan`, not `implement`. If a person rejects
+  the change, re-implementing the same plan would waste the rejection.
+- A failure path is bounded by `limits.max_retries`, so `max_retries: 0` forbids a
+  failure path entirely and an exhausted budget stops rather than looping.
+- Eval scoring treats a missing criterion as zero and reports it, so a response
+  cannot reach the threshold by omission; forbidden behavior is disqualifying
+  rather than a deduction.
+- `validateRunRecord` rejects `kind: "recorded"` outright, because no component in
+  this build can execute a run, so such a record could only be fabricated. That
+  check is removed deliberately when execution exists, not before.
+- Token and cost fields are optional and omitted when unmeasured. An absent
+  measurement means unmeasured, never zero, and callers ask `isMeasured`.
+- Handoff records require `blockers` and `failedAttempts` as keys, so an empty list
+  is an explicit claim rather than a silent omission.
+- The written-handoff checker runs over this repository's own phase handoffs, so
+  the project is held to the contract it publishes.
+
+## Phase 6 acceptance criteria
+
+Add the Next.js/React profile and full-stack composition. The Next.js profile must
+detect a Node build root and supply only commands a Next.js project genuinely has,
+with lint, typecheck, test and build treated separately and Playwright not assumed.
+Full-stack composition must determine affected areas without inventing parallel
+agent execution. Versions must be verified at implementation time rather than
+assumed, and no profile may claim a framework is present merely because a manifest
+exists.
 
 ## Verification
 

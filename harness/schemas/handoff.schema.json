@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/handoff/v1",
+  "title": "HandoffRecord",
+  "description": "AX Harness v1 handoff. Enough state for another session to continue without rebuilding context. Blockers and failed attempts are required keys so that omitting them is impossible: an empty list is an explicit claim that there were none.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "goal", "status", "completed", "changedFiles", "decisions", "blockers", "failedAttempts", "nextSteps", "validation"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/definitions/identifier" },
+    "goal": { "$ref": "#/definitions/text" },
+    "status": { "enum": ["complete", "partial", "blocked", "abandoned"] },
+    "completed": { "$ref": "#/definitions/list", "description": "Work actually finished, as distinct from work attempted." },
+    "changedFiles": { "$ref": "#/definitions/list" },
+    "decisions": { "$ref": "#/definitions/list" },
+    "blockers": { "$ref": "#/definitions/list", "description": "Empty means there are none, not that the question was skipped." },
+    "failedAttempts": { "$ref": "#/definitions/list", "description": "Recorded so the next session does not repeat them." },
+    "nextSteps": { "$ref": "#/definitions/list" },
+    "validation": { "$ref": "#/definitions/list", "description": "What was verified, and what was explicitly not verified." }
+  },
+  "definitions": {
+    "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "note": { "type": "string", "minLength": 1, "maxLength": 320, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "list": { "type": "array", "minItems": 0, "maxItems": 64, "items": { "$ref": "#/definitions/note" } }
+  }
+}
