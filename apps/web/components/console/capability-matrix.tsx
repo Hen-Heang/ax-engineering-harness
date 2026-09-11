@@ -20,7 +20,12 @@ export function CapabilityMatrix({
   roles: { id: string; title: string }[];
 }) {
   return (
-    <div className="relative min-w-0 max-w-full overflow-x-auto rounded-lg border">
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label="Capability matrix, scrollable"
+      className="relative min-w-0 max-w-full overflow-x-auto rounded-lg border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+    >
       <table className="w-full min-w-184 border-collapse text-sm">
         <caption className="sr-only">
           Which role holds which capability, as the policy declares it. Nothing enforces this.

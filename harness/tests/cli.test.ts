@@ -34,8 +34,9 @@ test('CLI prints the quality plan and refuses to call an unrun gate a pass', () 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Pipeline passed: false/);
   assert.match(result.stdout, /unrun is not a pass/);
-  assert.match(result.stdout, /integration_tests\s+not-applicable/);
+  assert.match(result.stdout, /eval\s+not-applicable/);
   assert.match(result.stdout, /build\s+ready\s+project\s+npm run build/);
   assert.match(result.stdout, /lint\s+ready\s+project\s+npm run lint/);
+  assert.match(result.stdout, /integration_tests\s+ready\s+project\s+npm run e2e/);
   assert.equal(run('quality', 'one', 'two').status, 2);
 });

@@ -4,7 +4,7 @@ A reusable engineering layer for reliable AI-assisted software development.
 
 Context · Agents · Skills · MCP · Guardrails · Quality Gates · Evals
 
-**Experimental / Learning Project — Phase 11 quality, evals, runs, adoption and docs.**
+**Experimental / Learning Project — all twelve phases implemented.**
 
 This backend-first project explores how human direction, context, reusable
 procedures, controlled tools, verification, and evaluation improve AI-assisted
@@ -27,6 +27,8 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 - Quality pipeline planning that keeps passed, failed, unavailable and unrun
   distinct, a lifecycle with bounded retries, eval scoring, and handoff checking.
 - A local read-only CLI, typecheck, automated tests, and package build.
+- Browser verification of every console page at four widths, with automated
+  accessibility checks, run as part of `npm run check`.
 - An `apps/web` console with persistent navigation, a mobile sheet, an Overview page
   whose status labels come from the definitions, read-only architecture and workflow
   diagrams with a full text alternative, pages for every building block, a
@@ -56,13 +58,15 @@ access. Tests evaluate software; evals evaluate agent behavior.
 ## Quick start
 
 Use Node.js 24 LTS and npm. Existing Java projects retain their own toolchains.
+Run `npx playwright install chromium` once before the browser tests can run.
 
 ```sh
 npm ci
 npm run ax -- validate      # resolve and check a project declaration
 npm run ax -- quality       # plan the quality pipeline for a project
 npm run ax -- policy        # print the capability matrix
-npm run check               # build, typecheck, lint, tests, console build
+npm run e2e                 # browser tests at four widths, with accessibility checks
+npm run check               # everything above, including the browser tests
 npm run dev --workspace @ax-harness/web   # run the console locally
 ```
 
@@ -182,7 +186,8 @@ explorer, and the adoption simulator arrive in later phases; demo runs and evals
 stay labelled as examples. See [the console](docs/web-console.md).
 
 The [implementation plan](docs/implementation-plan.md) tracks twelve phases.
-Next: integrated tests, accessibility and responsive QA across breakpoints.
+Every planned phase is implemented. What remains is execution: gate running, MCP
+connections, real runs and policy enforcement, none of which exist yet.
 
 See [architecture](docs/architecture.md), [audit](docs/repository-audit.md), and
 [history](HISTORY.md). This is an evolving learning project, not an expertise or

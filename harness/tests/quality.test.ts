@@ -34,8 +34,9 @@ test('the pipeline plans a resolved project without running anything', async () 
   assert.equal(byStage.get('build')?.commandSource, 'project');
   assert.equal(byStage.get('build')?.command, 'npm run build');
   assert.equal(byStage.get('lint')?.readiness, 'ready');
-  // This repository disables integration tests, so that stage does not apply.
-  assert.equal(byStage.get('integration_tests')?.readiness, 'not-applicable');
+  assert.equal(byStage.get('integration_tests')?.readiness, 'ready');
+  // This repository runs no agent evaluation, so that stage does not apply.
+  assert.equal(byStage.get('eval')?.readiness, 'not-applicable');
   // Review and approval need a person, so they are never merely "ready".
   assert.equal(byStage.get('review')?.readiness, 'manual');
   assert.equal(byStage.get('human_approval')?.readiness, 'manual');
@@ -61,7 +62,7 @@ test('every gate starts unrun, and unrun is not a pass', async () => {
   assert.ok(initial.every(status => status.outcome === 'unrun'));
   assert.equal(pipelinePassed(initial), false);
   // Gates that do not apply are absent rather than silently counted as passes.
-  assert.equal(initial.some(status => status.stage === 'integration_tests'), false);
+  assert.equal(initial.some(status => status.stage === 'eval'), false);
 });
 
 test('only genuinely passed gates make the pipeline pass', () => {

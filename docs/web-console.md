@@ -1,14 +1,19 @@
 # AX Engineering Console (v1)
 
-Implemented: every page of the console — Overview, architecture and workflow
-diagrams, the building-block pages, the configuration explorer, quality gates,
-evals, runs, adoption with its simulator, and docs. Planned: systematic
-accessibility and responsive QA, which is the remaining phase.
+Implemented: every page of the console, and browser verification of all of them at
+four widths with automated accessibility checks, run as part of `npm run check`.
 
 ```sh
+npx playwright install chromium            # once, before the browser tests can run
 npm run dev --workspace @ax-harness/web    # local development
-npm run check                              # build, typecheck, lint, test, build web
+npm run e2e                                # browser tests against a production build
+npm run check                              # everything, including the browser tests
 ```
+
+The browser tests serve a production build, so `check` builds before running them. If
+Chromium is not installed they fail with Playwright's own message rather than being
+skipped, which keeps the repository honest about its own rule that an unavailable
+check is not a passing one.
 
 Next.js collects anonymous telemetry by default. Opt out with
 `npx next telemetry disable` if you prefer; nothing here does it for you, because
@@ -232,3 +237,41 @@ Pretending roles differ per stack would have been an easy and dishonest demo.
 
 The simulator is a client component, so it declares its own view types locally rather
 than importing them from a module that reaches the harness.
+
+## Browser verification
+
+Every page is loaded at four widths — 1440, 768, 428 and 360 CSS pixels — and checked
+for three things: that the document itself never scrolls sideways, that anything wider
+than the viewport sits inside a scroll container, and that the page has exactly one
+`main` landmark and one `h1`. Navigation is exercised separately at the widths where
+each layout exists, including the sheet opening, navigating, closing on Escape, and
+returning focus to its trigger.
+
+Accessibility is checked with axe against WCAG 2.0 and 2.1, levels A and AA, at the
+widest and narrowest sizes. **axe finds a real subset of problems, not all of them.**
+Passing means no automatically detectable violation; it is not a claim that the
+console is fully accessible.
+
+Which specs run at which width is decided in the Playwright config rather than by
+skipping at runtime, so a spec never reports as skipped when it simply does not apply
+to that layout.
+
+### Two defects it found
+
+Both were invisible to every earlier check and are fixed:
+
+- **Scrollable regions were not keyboard reachable.** Every source block, and the
+  capability matrix container, scrolled with a pointer but could not be focused, so
+  someone navigating without a mouse could not read past the first screenful. They are
+  now focusable and named.
+- **The failure badge did not meet contrast.** The generator's destructive variant is a
+  tint, `bg-destructive/10` with `text-destructive`, which falls below the minimum on
+  this surface. A failure is the one outcome that must never be hard to read, so it is
+  now solid.
+
+### What remains unverified
+
+Only Chromium is installed, so Firefox and WebKit are unexercised. The suite has been
+run on Windows with Node 25.2.1; Linux, macOS and the recommended Node 24 runtime are
+untested. Manual assistive-technology testing has not been done, and nothing has been
+deployed.

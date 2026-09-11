@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Badge } from '@/components/ui/badge';
 import { DefinitionList } from '@/components/console/definition-list';
 import { ExampleNotice } from '@/components/console/example-notice';
+import { failureBadgeClassName } from '@/components/console/outcome-badge';
 import { PageHeader } from '@/components/console/page-header';
 import { detailsOfKind } from '@/lib/definitions';
 import { evalThreshold, exampleOutcomes } from '@/lib/simulation';
@@ -66,7 +67,10 @@ export default function EvalsPage() {
             <li key={outcome.label} className="flex flex-col gap-2 rounded-lg border bg-card px-4 py-3.5">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="font-mono text-sm tabular-nums">{outcome.percent}%</span>
-                <Badge variant={outcome.passed ? 'default' : 'destructive'} className="font-normal">
+                <Badge
+                  variant={outcome.passed ? 'default' : 'destructive'}
+                  className={outcome.passed ? 'font-normal' : `font-normal ${failureBadgeClassName}`}
+                >
                   {outcome.passed ? 'pass' : 'fail'}
                 </Badge>
                 <span className="text-sm font-medium">{outcome.label}</span>

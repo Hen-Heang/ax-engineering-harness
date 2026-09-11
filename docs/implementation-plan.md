@@ -16,7 +16,7 @@ bounded phases, inspecting existing code and verifying each change before the ne
 | 9 | Architecture and workflow visualizations | Implemented |
 | 10 | Building-block pages and Config Explorer | Implemented |
 | 11 | Quality, evals, example runs, adoption simulator, docs | Implemented |
-| 12 | Integrated tests, accessibility, responsive QA | Next |
+| 12 | Integrated tests, accessibility, responsive QA | Implemented |
 
 ## Phase 2 decisions
 
@@ -233,13 +233,32 @@ bounded phases, inspecting existing code and verifying each change before the ne
 - The navigation test that asserted unbuilt sections exist was replaced once every
   section landed, rather than left to pass vacuously.
 
-## Phase 12 acceptance criteria
+## Phase 12 decisions
 
-Verify the console systematically rather than by sampling: accessibility and
-responsive behaviour at desktop, tablet, 428px and a narrower width, across every
-page, with automated coverage that runs in the repository's own checks. Address what
-that finds. Keep the harness checks passing unchanged, and record honestly what
-remains untested, including platforms and browsers that were not exercised.
+- The browser suite runs inside `npm run check` rather than beside it, and the
+  repository's own declaration now enables the integration-test gate with
+  `npm run e2e`. A check the repository does not run is not a check it has.
+- If Chromium is missing the suite fails with Playwright's message rather than being
+  skipped, which applies the project's own rule that an unavailable check is not a
+  passing one to the project itself.
+- Which specs run at which width is set in the Playwright config rather than by
+  skipping at runtime, so a spec never reports as skipped when it simply does not
+  apply to that layout.
+- axe is described as finding a real subset of problems. Passing is stated as "no
+  automatically detectable violation", never as "accessible".
+- Two real defects were fixed rather than accommodated: scrollable regions were made
+  keyboard reachable, and the failure badge was made solid because the generator's
+  tinted destructive variant fell below the contrast minimum.
+- Only Chromium is installed. Firefox and WebKit are named as unverified rather than
+  implied to be covered.
+
+## After the twelve phases
+
+Every planned phase is implemented. What remains is execution: running gates,
+connecting MCP tools, recording real runs, and enforcing policy at the point of
+access. None of it exists, and no part of the repository claims otherwise. The next
+piece of work should be a controlled execution layer, at which point the run schema's
+refusal of a `recorded` record is removed deliberately rather than by accident.
 
 ## Verification
 

@@ -12,6 +12,7 @@ commands:
   lint: npm run lint
   typecheck: npm run typecheck
   test: npm test
+  integration_test: npm run e2e
   security: npm audit --omit=dev
 tools:
   codebase:
@@ -34,7 +35,7 @@ quality:
   lint: true
   typecheck: true
   tests: true
-  integration_tests: false
+  integration_tests: true
   security: true
   review: true
   eval: false
