@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "java-spring",
+  "status": "experimental",
+  "description": "Java and Spring Boot services built with Maven or Gradle. Supplies build and test command defaults; other gates must be declared by the project.",
+  "buildSystems": {
+    "maven": {
+      "manifests": ["pom.xml"],
+      "runner": {
+        "wrapper": {
+          "posix": { "file": "mvnw", "command": "./mvnw" },
+          "windows": { "file": "mvnw.cmd", "command": "mvnw.cmd" }
+        },
+        "fallback": "mvn"
+      },
+      "commands": {
+        "build": ["-B", "--no-transfer-progress", "package", "-DskipTests"],
+        "test": ["-B", "--no-transfer-progress", "test"]
+      }
+    },
+    "gradle": {
+      "manifests": ["build.gradle", "build.gradle.kts"],
+      "runner": {
+        "wrapper": {
+          "posix": { "file": "gradlew", "command": "./gradlew" },
+          "windows": { "file": "gradlew.bat", "command": "gradlew.bat" }
+        },
+        "fallback": "gradle"
+      },
+      "commands": {
+        "build": ["build", "-x", "test"],
+        "test": ["test"]
+      }
+    }
+  },
+  "architecture": [
+    "Controller, service, and repository or mapper layers stay separated; business logic belongs in the service layer.",
+    "REST endpoints expose DTOs rather than persistence entities.",
+    "Transaction boundaries are declared at the service layer.",
+    "Spring Security configuration is security-sensitive and requires explicit review.",
+    "SQL and schema changes are reviewed for indexes, constraints, and migration safety.",
+    "Unit tests and integration tests are distinct; integration tests may require external services."
+  ],
+  "limitations": [
+    "A manifest is evidence of build layout only. It does not prove that Spring Boot, a specific JDK, or any plugin is present and working.",
+    "No integration_test default is supplied, because neither Maven failsafe nor a Gradle integrationTest task is guaranteed to be configured.",
+    "No lint, typecheck, or security default is supplied, because Java projects share no single standard command for them.",
+    "Resolution never runs a wrapper, parses a build script, or verifies that a task exists.",
+    "This profile has not been validated against the legacy Java projects preserved in this repository."
+  ]
+}

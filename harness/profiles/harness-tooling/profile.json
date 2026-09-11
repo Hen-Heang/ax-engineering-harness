@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "harness-tooling",
+  "status": "implemented",
+  "description": "This repository's own Node and TypeScript workspace, which hosts the vendor-neutral Harness package.",
+  "buildSystems": {
+    "node": {
+      "manifests": ["package.json"],
+      "runner": { "fallback": "npm" },
+      "commands": {
+        "build": ["run", "build"],
+        "typecheck": ["run", "typecheck"],
+        "test": ["test"],
+        "security": ["audit", "--omit=dev"]
+      }
+    }
+  },
+  "architecture": [
+    "Harness core stays vendor-neutral; stack assumptions belong to profiles and vendor instructions to adapters.",
+    "JSON Schema is authoritative and TypeScript types are generated from it.",
+    "Configuration validation and profile resolution never execute declared commands.",
+    "The legacy Java projects preserved in this repository are outside the npm workspace and are never built by it."
+  ],
+  "limitations": [
+    "Applies to this repository's own tooling workspace, not to arbitrary Node applications.",
+    "No lint default is supplied, because the workspace does not define a lint command yet.",
+    "npm availability is assumed and never verified."
+  ]
+}

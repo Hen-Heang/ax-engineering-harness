@@ -1,11 +1,11 @@
 import { realpath, stat } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { ProjectConfig } from '../../config/project.generated.js';
-import { validateProject, type ConfigIssue } from '../../config/validate.js';
+import { validateDeclaration, type ConfigIssue } from '../../config/validate.js';
 
 /** Checks references without reading their contents. Does not authorize later access. */
 export async function checkContextFiles(config: ProjectConfig, projectRoot: string): Promise<ConfigIssue[]> {
-  const validated = validateProject(config);
+  const validated = validateDeclaration(config);
   if (!validated.valid) return validated.issues;
   let root: string;
   try {

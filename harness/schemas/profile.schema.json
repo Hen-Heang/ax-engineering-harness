@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/profile/v1",
+  "title": "ProfileDefinition",
+  "description": "AX Harness v1 stack profile. A profile supplies command defaults and documented assumptions. It never grants capabilities, relaxes permissions, enables quality gates, or proves that a toolchain is installed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "status", "description", "buildSystems", "architecture", "limitations"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "description": "Must equal the built-in registry key that exposes this definition." },
+    "status": { "enum": ["implemented", "experimental", "planned"] },
+    "description": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "buildSystems": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "Supported build systems. Manifest presence is evidence of layout only.",
+      "properties": {
+        "maven": { "$ref": "#/definitions/buildSystem" },
+        "gradle": { "$ref": "#/definitions/buildSystem" },
+        "node": { "$ref": "#/definitions/buildSystem" }
+      }
+    },
+    "architecture": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "$ref": "#/definitions/note" },
+      "description": "Assumptions a reviewer should preserve. Assumptions are not verified facts about any project."
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "$ref": "#/definitions/note" },
+      "description": "Explicit statements of what this profile does not establish or supply."
+    }
+  },
+  "definitions": {
+    "buildSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifests", "runner", "commands"],
+      "properties": {
+        "manifests": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "$ref": "#/definitions/fileName" },
+          "description": "Filenames looked up directly in the selected build root. Detection never recurses."
+        },
+        "runner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fallback"],
+          "properties": {
+            "wrapper": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["posix", "windows"],
+              "properties": {
+                "posix": { "$ref": "#/definitions/runnerForm" },
+                "windows": { "$ref": "#/definitions/runnerForm" }
+              }
+            },
+            "fallback": { "$ref": "#/definitions/argument", "description": "Used when no wrapper is present. Its availability on PATH is never verified." }
+          }
+        },
+        "commands": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "description": "Gate command defaults. Omit a gate the profile cannot honestly supply.",
+          "properties": {
+            "build": { "$ref": "#/definitions/arguments" },
+            "lint": { "$ref": "#/definitions/arguments" },
+            "typecheck": { "$ref": "#/definitions/arguments" },
+            "test": { "$ref": "#/definitions/arguments" },
+            "integration_test": { "$ref": "#/definitions/arguments" },
+            "security": { "$ref": "#/definitions/arguments" }
+          }
+        }
+      }
+    },
+    "runnerForm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "command"],
+      "properties": {
+        "file": { "$ref": "#/definitions/fileName", "description": "Wrapper filename tested for existence in the build root." },
+        "command": { "$ref": "#/definitions/argument", "description": "Platform invocation form for that wrapper." }
+      }
+    },
+    "fileName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "description": "Single path segment. Directory separators and traversal are forbidden."
+    },
+    "argument": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\s\\u0000-\\u001f]+$",
+      "description": "Whitespace-free token, so that joining arguments is unambiguous without quoting."
+    },
+    "arguments": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/definitions/argument" } },
+    "note": { "type": "string", "minLength": 1, "maxLength": 256, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" }
+  }
+}

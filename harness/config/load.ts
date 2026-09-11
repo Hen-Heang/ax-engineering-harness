@@ -1,6 +1,6 @@
 import { open } from 'node:fs/promises';
 import { isAlias, parseDocument, visit } from 'yaml';
-import { validateProject, type ValidationResult } from './validate.js';
+import { validateDeclaration, type ValidationResult } from './validate.js';
 
 export const MAX_CONFIG_BYTES = 64 * 1024;
 
@@ -20,7 +20,7 @@ export function parseProject(source: string): ValidationResult {
     let alias = false;
     visit(document, { Node(_key, node) { if (isAlias(node)) alias = true; } });
     if (alias) return failure('yaml.alias', 'YAML aliases are not supported in project configuration.');
-    return validateProject(document.toJS({ maxAliasCount: 0 }));
+    return validateDeclaration(document.toJS({ maxAliasCount: 0 }));
   } catch {
     return failure('yaml.invalid', 'Configuration could not be parsed safely.');
   }

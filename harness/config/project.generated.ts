@@ -26,9 +26,13 @@ export interface ProjectConfig {
      */
     mode: "single-repo";
     /**
-     * Identifier only in Phase 2; profile existence and resolution are not yet checked.
+     * Must name a profile in the built-in registry. Resolution rejects unknown identifiers.
      */
     profile: string;
+    /**
+     * Optional explicit selection. Required only when several build manifests make detection ambiguous.
+     */
+    build_system?: "maven" | "gradle" | "node";
   };
   context: {
     architecture?: ContextPath;

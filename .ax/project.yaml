@@ -1,4 +1,5 @@
-# Phase 2 declaration: profile identifiers are not yet resolved.
+# Declares this repository's own Node tooling workspace. The harness-tooling profile
+# supplies matching defaults; the commands below are declared explicitly and win.
 schemaVersion: 1
 project:
   name: ax-engineering-harness

@@ -1,8 +1,8 @@
 # Project configuration (v1)
 
 Implemented: strict YAML/JSON structure validation, required-command checks,
-and local context-reference checks. Experimental: the v1 contract. Planned:
-profile resolution, permission evaluator, command execution, and run recording.
+local context-reference checks, and profile resolution. Experimental: the v1
+contract. Planned: permission evaluator, command execution, and run recording.
 
 Use `.ax/project.yaml` inside a project. See this repository's declaration for a
 complete example. `schemaVersion: 1` is required; unknown fields and coercion of
@@ -26,7 +26,7 @@ slashes, even on Windows. Only Markdown references are supported initially.
 
 | Section | Contract |
 | --- | --- |
-| project | Name, `single-repo` mode, profile identifier |
+| project | Name, `single-repo` mode, profile identifier, optional `build_system` |
 | context | Optional architecture, domain, database Markdown references |
 | commands | Build, lint, typecheck, test, integration_test, security declarations |
 | tools | Explicit codebase, docs, GitHub, metadata-only database switches |
@@ -35,15 +35,17 @@ slashes, even on Windows. Only Markdown references are supported initially.
 | limits | 0–5 retries; 1–3600 seconds declared maximum duration |
 
 `quality.tests` requires `commands.test`; `integration_tests` requires
-`integration_test`. The other executable gate names map directly. Enabled gates
-must have commands even if a future profile could supply them. Disabled gates
-are not reported as passed. Review, evaluation, and approval evidence is not
+`integration_test`. The other executable gate names map directly. An enabled gate
+must end up with a command: either declared here, or supplied by the profile
+during resolution. A gate that neither source supplies fails. Disabled gates are
+not reported as passed. Review, evaluation, and approval evidence is not
 implemented or checked by configuration validation.
 
-Profile identifiers are currently syntax-checked only. `harness-tooling` names
-this repository's intended future profile; it is not a resolved profile. Java,
-Next.js, and full-stack profiles arrive in subsequent phases. `multi-repo` mode
-is rejected until its contract and implementation exist.
+`project.profile` must name a built-in profile; unknown identifiers fail.
+`project.build_system` is optional and only needed when several build manifests
+share one root, which would otherwise be rejected as ambiguous. See
+[profiles](profiles.md) for resolution, detection, and precedence rules.
+`multi-repo` mode is rejected until its contract and implementation exist.
 
 ## Safety and limitations
 
@@ -55,16 +57,21 @@ is rejected until its contract and implementation exist.
 - No environment substitution, shell execution, network access, or credential
   fields are supported. Commands are opaque declarations and may still be
   dangerous: validity is not authorization or proof of safe execution.
+- Resolution reads manifest and wrapper file names only. It never runs a wrapper,
+  parses a build script, or verifies that a command exists on `PATH`.
 - Limits are declarations; no execution engine currently enforces them.
 - Context checks describe the filesystem at validation time. A future reader
   must recheck containment and enforce tool policy at access time.
-- The parser API does not resolve files. Use `checkContextFiles` or the CLI for
-  the separate reference check. Neither resolves profiles.
+- `parseProject` and `loadProject` perform declaration validation only, because a
+  profile may still supply commands. Use `resolveProject` for the authoritative
+  check, and `checkContextFiles` for the separate reference check. The CLI runs
+  all three in that order.
 - Exit codes: 0 valid declaration/references, 1 validation failure, 2 usage error.
   Errors do not echo configuration values.
 
-The authoritative contract is `harness/schemas/project.schema.json` (JSON Schema
-draft-07). Regenerate the TypeScript declaration with:
+The authoritative contracts are `harness/schemas/project.schema.json` and
+`harness/schemas/profile.schema.json` (JSON Schema draft-07). Regenerate the
+TypeScript declarations with:
 
 ```sh
 npm run generate:types --workspace @ax-harness/core

@@ -5,8 +5,10 @@ import { compileFromFile } from 'json-schema-to-typescript';
 import { fileURLToPath } from 'node:url';
 
 test('generated configuration types match the authoritative JSON Schema', async () => {
-  const expected = await compileFromFile(fileURLToPath(new URL('../schemas/project.schema.json', import.meta.url)));
-  const actual = await readFile(new URL('../config/project.generated.ts', import.meta.url), 'utf8');
-  assert.equal(actual.replaceAll('\r\n', '\n'), expected.replaceAll('\r\n', '\n'),
-    'Run npm run generate:types --workspace @ax-harness/core');
+  for (const name of ['project', 'profile']) {
+    const expected = await compileFromFile(fileURLToPath(new URL(`../schemas/${name}.schema.json`, import.meta.url)));
+    const actual = await readFile(new URL(`../config/${name}.generated.ts`, import.meta.url), 'utf8');
+    assert.equal(actual.replaceAll('\r\n', '\n'), expected.replaceAll('\r\n', '\n'),
+      `Run npm run generate:types --workspace @ax-harness/core (${name})`);
+  }
 });
