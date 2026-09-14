@@ -36,4 +36,6 @@ export interface CommandRunnerOptions {
   /** Maximum retained bytes across stdout and stderr. */
   maxOutputBytes?: number;
   env?: NodeJS.ProcessEnv;
+  /** Overridden only by tests that exercise the other platform's lookup rules. */
+  platform?: NodeJS.Platform;
 }

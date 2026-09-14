@@ -28,7 +28,7 @@ export function CapabilityMatrix({
     >
       <table className="w-full min-w-184 border-collapse text-sm">
         <caption className="sr-only">
-          Which role holds which capability, as the policy declares it. Only run_tests is enforced, by the gate runner.
+          Which role holds which capability, as the policy declares it. Only run_tests is enforced, by the quality executor.
         </caption>
         <thead>
           <tr className="border-b bg-muted/40">

@@ -26,10 +26,10 @@ export default function PoliciesPage() {
         </p>
         <p>
           <strong className="font-medium text-foreground">One capability is now enforced.</strong>{' '}
-          The gate runner checks{' '}
-          <code className="font-mono text-xs">run_tests</code> before running anything, so a
-          role without it runs no command. Every other row is still only a declaration: it
-          opens no connection and constrains no tool, and must not be mistaken for a
+          The quality executor checks{' '}
+          <code className="font-mono text-xs">run_tests</code> before running anything, so an
+          agent role without it runs no command. Every other row is still only a declaration:
+          it opens no connection and constrains no tool, and must not be mistaken for a
           security boundary.
         </p>
       </PageHeader>

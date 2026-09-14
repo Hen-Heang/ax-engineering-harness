@@ -48,6 +48,23 @@ function windowsExtensions(env: NodeJS.ProcessEnv): string[] {
   return pathext.split(';').map(part => part.trim()).filter(part => part.length > 0);
 }
 
+/**
+ * The suffixes to try for a name on this platform, in order.
+ *
+ * Windows must not try the bare name first. Node and Gradle both ship an
+ * extensionless POSIX shell script beside the Windows launcher, so `npm` finds a
+ * file that exists, is a regular file, and cannot be executed by `CreateProcess` —
+ * which surfaces much later as a misleading ENOENT. Following the rule cmd.exe
+ * itself uses, a name that already carries a known extension is taken as written,
+ * and any other name gets PATHEXT appended.
+ */
+function candidateExtensions(platform: NodeJS.Platform, env: NodeJS.ProcessEnv, name: string): string[] {
+  if (platform !== 'win32') return [''];
+  const extensions = windowsExtensions(env);
+  const already = extensions.some(extension => name.toLowerCase().endsWith(extension.toLowerCase()));
+  return already ? [''] : extensions;
+}
+
 export interface ResolveExecutableOptions {
   cwd: string;
   env?: NodeJS.ProcessEnv;
@@ -68,7 +85,7 @@ export async function resolveExecutable(
 ): Promise<string | null> {
   const env = options.env ?? process.env;
   const platform = options.platform ?? process.platform;
-  const extensions = platform === 'win32' ? ['', ...windowsExtensions(env)] : [''];
+  const extensions = candidateExtensions(platform, env, name);
 
   const explicit = name.includes('/') || name.includes('\\');
   const roots = explicit

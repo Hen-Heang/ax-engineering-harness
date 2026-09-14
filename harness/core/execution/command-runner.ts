@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { parseCommand } from './command-parser.js';
+import { resolveExecutable } from './executable.js';
 import type { CommandExecutionResult, CommandRunnerOptions } from './types.js';
 
 export const DEFAULT_MAX_OUTPUT_BYTES = 64 * 1024;
@@ -29,23 +30,41 @@ export async function runCommand(
   options: CommandRunnerOptions,
 ): Promise<CommandExecutionResult> {
   const started = Date.now();
-  const parsed = parseCommand(command);
-  if (!parsed.supported) {
-    const finished = Date.now();
-    return {
-      command, program: null, args: [], startedAt: timestamp(started), finishedAt: timestamp(finished),
-      durationMs: finished - started, exitCode: null, stdout: '', stderr: '', status: 'unsupported',
-      timedOut: false, outputTruncated: false, unsupportedReason: parsed.reason,
-    };
-  }
-
-  const { program, args } = parsed.command;
   const outputLimit = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
   if (!Number.isSafeInteger(outputLimit) || outputLimit < 0) {
     throw new RangeError('maxOutputBytes must be a non-negative safe integer.');
   }
   if (!Number.isFinite(options.timeoutSeconds) || options.timeoutSeconds <= 0) {
     throw new RangeError('timeoutSeconds must be greater than zero.');
+  }
+
+  const blank = (program: string | null, args: string[]) => ({
+    command, program, args, startedAt: timestamp(started), finishedAt: timestamp(Date.now()),
+    durationMs: Date.now() - started, exitCode: null, stdout: '', stderr: '',
+    timedOut: false, outputTruncated: false,
+  });
+
+  const parsed = parseCommand(command);
+  if (!parsed.supported) {
+    return { ...blank(null, []), status: 'unsupported', unsupportedReason: parsed.reason };
+  }
+
+  const { program, args } = parsed.command;
+  const env = options.env ?? process.env;
+
+  /*
+   * The executable is looked up here rather than by a shell. On Windows `npm` is
+   * really `npm.cmd`, and `shell: true` would resolve that only by reintroducing
+   * shell parsing of the whole command line. A name that resolves to nothing is an
+   * infrastructure error, not a failing command.
+   */
+  const file = await resolveExecutable(program, {
+    cwd: options.cwd,
+    env,
+    ...(options.platform === undefined ? {} : { platform: options.platform }),
+  });
+  if (file === null) {
+    return { ...blank(program, args), status: 'execution-error', errorCode: 'ENOENT' };
   }
 
   return new Promise(resolve => {
@@ -56,12 +75,28 @@ export async function runCommand(
     let timedOut = false;
     let settled = false;
 
-    const child = spawn(program, args, {
-      cwd: options.cwd,
-      env: options.env ?? process.env,
-      shell: false,
-      windowsHide: true,
-    });
+    let child;
+    try {
+      child = spawn(file, args, {
+        cwd: options.cwd,
+        env,
+        shell: false,
+        windowsHide: true,
+      });
+    } catch (error) {
+      /*
+       * `spawn` can throw synchronously rather than emitting `error`. Since Node
+       * 18.20 it does exactly that, with EINVAL, for a Windows `.cmd` or `.bat`
+       * file, because those can only be run through `cmd.exe` and their argument
+       * quoting is unsafe (CVE-2024-27980). Refusing is correct; crashing the
+       * caller is not, so the refusal is reported like any other one.
+       */
+      const code = error instanceof Error && 'code' in error && typeof error.code === 'string'
+        ? error.code
+        : 'spawn-error';
+      resolve({ ...blank(program, args), status: 'execution-error', errorCode: code });
+      return;
+    }
 
     const collect = (stream: 'stdout' | 'stderr', chunk: Buffer | string) => {
       const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
@@ -84,7 +119,10 @@ export async function runCommand(
       clearTimeout(timer);
       const finished = Date.now();
       resolve({
-        command, program, args, startedAt: timestamp(started), finishedAt: timestamp(finished),
+        command,
+        /* The declared name, never the resolved absolute path, which can contain a
+         * home directory and therefore a username. Run records are publishable. */
+        program, args, startedAt: timestamp(started), finishedAt: timestamp(finished),
         durationMs: finished - started, exitCode, stdout: stdout.toString('utf8'),
         stderr: stderr.toString('utf8'), status, timedOut, outputTruncated,
         ...(errorCode === undefined ? {} : { errorCode }),

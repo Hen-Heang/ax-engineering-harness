@@ -34,15 +34,25 @@ Implemented:
 - `execution/command-runner.ts` is the vendor-neutral process boundary. It uses
   `spawn` with `shell: false`, captures stdout and stderr separately under one byte
   limit, applies a timeout, and distinguishes command failure from execution failure.
-- `execution/gates.ts` is the existing quality adapter over the generic runner. A
-  test asserts that validation, resolution, context checking and planning cannot
-  reach the execution modules.
+- `execution/executable.ts` finds the real file a program name refers to, rather
+  than delegating that lookup to a shell. On Windows it follows the PATHEXT rule
+  cmd.exe uses, so `npm` resolves to `npm.cmd` and never to the extensionless POSIX
+  script beside it, which exists but cannot be started.
+- `quality/execute.ts` is the only quality adapter over the generic runner. It is
+  also the single point where a declared capability is enforced rather than merely
+  described: an agent actor without `run_tests` runs nothing. A test asserts that
+  validation, resolution, context checking and planning cannot reach the execution
+  modules.
 
-The timeout sends a termination signal to the direct child process. Process-tree
-termination is not guaranteed across platforms. Windows `.cmd` and `.bat` shims are
-not routed through `cmd.exe`; if Node cannot start one directly, the result is an
-`execution-error`. Supporting those shims safely remains execution-layer work and
-must not be implemented by silently enabling a shell.
+Known limits, which are deliberately not papered over:
+
+- The timeout sends a termination signal to the direct child process. Process-tree
+  termination is not guaranteed across platforms, so a grandchild can outlive it.
+- The output ceiling is shared across stdout and stderr, so a chatty stream can
+  consume the budget the other would have used.
+- The byte limit applies to retained output, not to what the child produced.
+- A command whose executable is absent is `unavailable`, never `failed`. A missing
+  tool says nothing about the code.
 
 Planned core responsibilities:
 

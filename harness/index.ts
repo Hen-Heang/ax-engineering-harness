@@ -32,10 +32,10 @@ export {
   initialStatuses, pipeline, pipelinePassed, planQuality, summarize,
 } from './core/quality/plan.js';
 export type { GateOutcome, GatePlan, GateReadiness, GateStatus, Stage } from './core/quality/plan.js';
-export { executeQualityPlan } from './core/quality/execute.js';
+export { EXECUTION_CAPABILITY, executeQualityPlan, mayExecute } from './core/quality/execute.js';
 export type {
-  ExecuteQualityPlanOptions, QualityCommandRunner, QualityExecutionResult, QualityFinalStatus,
-  QualityGateOutcome, QualityGateReason, QualityGateResult,
+  ExecuteQualityPlanOptions, QualityActor, QualityCommandRunner, QualityExecutionResult,
+  QualityFinalStatus, QualityGateOutcome, QualityGateReason, QualityGateResult,
 } from './core/quality/execute.js';
 export {
   canRetry, canTransition, checkTransition, getState, isFailurePath, workflow, workflowStateIds,
@@ -57,8 +57,6 @@ export type { HandoffRecord } from './config/handoff.generated.js';
 export { architecture, architectureErrors, getArchitectureNode } from './core/architecture/registry.js';
 export type { ArchitectureEdge, ArchitectureNode } from './core/architecture/registry.js';
 export type { ArchitectureDefinition } from './config/architecture.generated.js';
-export { executeGates, EXECUTION_CAPABILITY } from './core/execution/gates.js';
-export type { ExecuteOptions, ExecutionReport, GateExecution, GateRefusal } from './core/execution/gates.js';
 export { resolveExecutable, toArgv } from './core/execution/executable.js';
 export type { ArgvResult, ArgvRefusal } from './core/execution/executable.js';
 export { DEFAULT_MAX_OUTPUT_BYTES, parseCommand, runCommand } from './core/execution/index.js';

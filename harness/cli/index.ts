@@ -4,8 +4,9 @@ import { checkContextFiles } from '../core/context/resolve.js';
 import { resolveProject } from '../core/profiles/resolve.js';
 import { capabilityMatrix } from '../core/permissions/decide.js';
 import { initialStatuses, pipelinePassed, planQuality, summarize } from '../core/quality/plan.js';
-import { executeQualityPlan, type QualityGateResult } from '../core/quality/execute.js';
-import { EXECUTION_CAPABILITY } from '../core/execution/gates.js';
+import {
+  EXECUTION_CAPABILITY, executeQualityPlan, type QualityActor, type QualityGateResult,
+} from '../core/quality/execute.js';
 import { buildRunRecord } from '../core/observability/run.js';
 import { persistRunRecord } from '../core/observability/storage.js';
 import type { ConfigIssue } from '../config/validate.js';
@@ -86,11 +87,23 @@ function gateDetail(gate: QualityGateResult): string {
   if (gate.reason === 'manual') return 'Manual';
   if (gate.reason === 'no-command') return 'No command configured';
   if (gate.reason === 'prior-gate-failed') return 'Not run after an earlier gate failed';
+  if (gate.reason === 'executable-not-found') return 'Command not found on this machine';
+  if (gate.reason === 'shell-required') {
+    return 'Needs a shell to start on this platform; the harness will not start one';
+  }
+  if (gate.reason === 'capability-denied') return 'The acting role may not run commands';
   if (gate.execution?.status === 'execution-error') {
     return `Could not execute (${gate.execution.errorCode ?? 'spawn-error'})`;
   }
   return '';
 }
+
+/*
+ * The CLI runs as the person who typed the command, in their own checkout. That is
+ * not an agent acting under a role, and labelling it one would put a capability
+ * decision in the record that nothing actually made.
+ */
+const CLI_ACTOR: QualityActor = { kind: 'human-cli' };
 
 async function quality(args: string[]): Promise<void> {
   const execute = args.includes('--execute');
@@ -117,6 +130,7 @@ async function quality(args: string[]): Promise<void> {
       root: outcome.root,
       timeoutSeconds: config.limits.max_duration_seconds,
       execute: true,
+      actor: CLI_ACTOR,
     });
     for (const gate of result.gates) {
       console.log(gate.title.toUpperCase());
@@ -166,7 +180,8 @@ async function quality(args: string[]): Promise<void> {
 
 function showPolicy(): void {
   console.log('Capability matrix declared in harness/policies/default/policy.json.');
-  console.log(`Only ${EXECUTION_CAPABILITY} is enforced, by the gate runner. The rest are declarations.`);
+  console.log(`Only ${EXECUTION_CAPABILITY} is enforced, and only where an agent actor asks the`);
+  console.log('quality executor to run gates. Every other row is a declaration nothing yet checks.');
   console.log('');
   console.log(`${'capability'.padEnd(21)}${'risk'.padEnd(8)}${'tool'.padEnd(10)}roles`);
   for (const { capability, agents } of capabilityMatrix()) {

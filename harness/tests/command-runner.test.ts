@@ -70,6 +70,21 @@ test('runner returns unsupported without starting a process', async t => {
   assert.equal(result.program, null);
 });
 
+test('a spawn that throws synchronously is reported, not propagated', { skip: process.platform !== 'win32' }, async t => {
+  /*
+   * Since Node 18.20, spawning a Windows `.cmd` or `.bat` with shell:false throws
+   * EINVAL synchronously rather than emitting `error`, because batch files can only
+   * run through cmd.exe and their quoting is unsafe (CVE-2024-27980). Refusing is
+   * right; taking the calling process down with it is not.
+   */
+  const root = await fixture(t, { 'tool.cmd': '@echo off\r\necho hi\r\n' });
+  const result = await runCommand('./tool.cmd', { cwd: root, timeoutSeconds: 5 });
+  assert.equal(result.status, 'execution-error');
+  assert.equal(result.errorCode, 'EINVAL');
+  assert.equal(result.exitCode, null);
+  assert.equal(result.program, './tool.cmd', 'the declared name, not a resolved absolute path');
+});
+
 test('runner terminates a command after its timeout', async t => {
   const root = await fixture(t, { 'wait.js': 'setTimeout(() => {}, 30000);\n' });
   const result = await runCommand('node wait.js', { cwd: root, timeoutSeconds: 0.05 });

@@ -4,19 +4,21 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
-  executeGates, parseProject, resolveExecutable, resolveProject, toArgv,
-  type ExecutionReport, type GateExecution, type ProjectConfig,
+  executeQualityPlan, parseProject, planQuality, resolveExecutable, resolveProject, toArgv,
+  type ProjectConfig, type QualityActor, type QualityExecutionResult, type QualityGateResult,
   type ResolvedProject,
 } from '../index.js';
 
 /**
- * The gate runner is the only part of the harness that starts a process, so these
+ * The quality executor is the only part of the harness that starts a process, so these
  * tests care as much about what it refuses as about what it runs.
  *
  * Every command used here is `node`, which is necessarily present, and every project
  * is a temporary directory. Nothing in these tests touches the preserved Java
  * projects, which must never be built by this workspace.
  */
+
+const HUMAN: QualityActor = { kind: 'human-cli' };
 
 const base: ProjectConfig = (() => {
   const template = `schemaVersion: 1
@@ -76,8 +78,22 @@ async function project(
   return { resolved: result.resolved, root };
 }
 
-function gate(report: ExecutionReport, stage: string): GateExecution | undefined {
-  return report.gates.find(entry => entry.stage === stage);
+/** Plans and then executes, which is the pairing the CLI performs. */
+async function run(
+  resolved: ResolvedProject,
+  root: string,
+  options: { execute: boolean; actor?: QualityActor; timeoutSeconds?: number },
+): Promise<QualityExecutionResult> {
+  return executeQualityPlan(planQuality(resolved), {
+    root,
+    timeoutSeconds: options.timeoutSeconds ?? resolved.config.limits.max_duration_seconds,
+    execute: options.execute,
+    actor: options.actor ?? HUMAN,
+  });
+}
+
+function gate(result: QualityExecutionResult, stage: string): QualityGateResult | undefined {
+  return result.gates.find(entry => entry.stage === stage);
 }
 
 test('a command is split into arguments, and shell syntax is refused outright', () => {
@@ -101,33 +117,68 @@ test('the executable is resolved without a shell, and a missing one is reported'
   assert.equal(await resolveExecutable('definitely-not-installed-xyz', { cwd: process.cwd() }), null);
 });
 
+test('on Windows a launcher wins over the extensionless script beside it', async t => {
+  /*
+   * Node and Gradle both ship a POSIX shell script next to the Windows launcher:
+   * `npm` beside `npm.cmd`, `gradlew` beside `gradlew.bat`. The bare file exists and
+   * is a regular file, but CreateProcess cannot run it, so preferring it produces a
+   * misleading "not found" long after the lookup. PATHEXT must win.
+   */
+  const root = await mkdtemp(join(tmpdir(), 'ax-pathext-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(join(root, 'tool'), '#!/bin/sh\n');
+  await writeFile(join(root, 'tool.CMD'), '@echo off\n');
+
+  const env = { PATH: root, PATHEXT: '.COM;.EXE;.BAT;.CMD' };
+  assert.equal(
+    await resolveExecutable('tool', { cwd: root, env, platform: 'win32' }),
+    join(root, 'tool.CMD'),
+  );
+  // A name that already carries a known extension is taken exactly as written.
+  assert.equal(
+    await resolveExecutable('tool.CMD', { cwd: root, env, platform: 'win32' }),
+    join(root, 'tool.CMD'),
+  );
+});
+
 test('reporting runs nothing, which is the default', async t => {
   const { resolved, root } = await project(t, { build: 'node --version' }, { build: true });
-  const report = await executeGates(resolved, { root, agent: 'qa-reviewer', execute: false });
+  const result = await run(resolved, root, { execute: false });
 
-  assert.equal(report.executed, false);
-  assert.equal(report.denied, false);
-  assert.equal(gate(report, 'build')?.outcome, 'unrun');
-  assert.equal(gate(report, 'build')?.refusal, 'not-executed');
-  assert.equal(gate(report, 'build')?.exitCode, null);
+  assert.equal(result.executed, false);
+  assert.equal(result.denied, false);
+  assert.equal(gate(result, 'build')?.outcome, 'unrun');
+  assert.equal(gate(result, 'build')?.reason, 'not-executed');
+  assert.equal(gate(result, 'build')?.execution, undefined);
 });
 
 test('a role without the capability runs nothing, even when asked to execute', async t => {
   const { resolved, root } = await project(t, { build: 'node --version' }, { build: true });
-  const report = await executeGates(resolved, { root, agent: 'planner', execute: true });
+  const result = await run(resolved, root, { execute: true, actor: { kind: 'agent', role: 'planner' } });
 
-  assert.equal(report.denied, true);
-  assert.equal(report.executed, false);
-  assert.equal(gate(report, 'build')?.outcome, 'unrun');
-  assert.equal(gate(report, 'build')?.refusal, 'capability-denied');
-  assert.equal(gate(report, 'build')?.exitCode, null, 'nothing should have run');
+  assert.equal(result.denied, true);
+  assert.equal(result.executed, false);
+  assert.equal(gate(result, 'build')?.outcome, 'unrun');
+  assert.equal(gate(result, 'build')?.reason, 'capability-denied');
+  assert.equal(gate(result, 'build')?.execution, undefined, 'nothing should have run');
+  assert.equal(result.finalStatus, 'incomplete', 'a denied run has not passed');
 });
 
 test('an unknown role is denied rather than defaulted', async t => {
   const { resolved, root } = await project(t, { build: 'node --version' }, { build: true });
-  const report = await executeGates(resolved, { root, agent: 'not-a-role', execute: true });
-  assert.equal(report.denied, true);
-  assert.equal(gate(report, 'build')?.refusal, 'capability-denied');
+  const result = await run(resolved, root, { execute: true, actor: { kind: 'agent', role: 'not-a-role' } });
+  assert.equal(result.denied, true);
+  assert.equal(gate(result, 'build')?.reason, 'capability-denied');
+});
+
+test('a role holding the capability may execute', async t => {
+  const { resolved, root } = await project(t, { build: 'node --version' }, { build: true });
+  const result = await run(resolved, root, {
+    execute: true,
+    actor: { kind: 'agent', role: 'backend-engineer' },
+  });
+  assert.equal(result.denied, false);
+  assert.equal(gate(result, 'build')?.outcome, 'passed');
 });
 
 test('a successful command passes and a failing one fails', async t => {
@@ -137,33 +188,36 @@ test('a successful command passes and a failing one fails', async t => {
     { build: true, tests: true },
     { 'fail.js': 'process.exit(3)\n' },
   );
-  const report = await executeGates(resolved, { root, agent: 'qa-reviewer', execute: true });
+  const result = await run(resolved, root, { execute: true });
 
-  assert.equal(report.executed, true);
-  const build = gate(report, 'build');
+  assert.equal(result.executed, true);
+  const build = gate(result, 'build');
   assert.equal(build?.outcome, 'passed');
-  assert.equal(build?.exitCode, 0);
-  assert.ok((build?.output ?? '').includes('v'), 'output should be captured');
+  assert.equal(build?.execution?.exitCode, 0);
+  assert.ok((build?.execution?.stdout ?? '').includes('v'), 'output should be captured');
 
-  const tests = gate(report, 'unit_tests');
+  const tests = gate(result, 'unit_tests');
   assert.equal(tests?.outcome, 'failed');
-  assert.equal(tests?.exitCode, 3);
-  assert.equal(tests?.timedOut, false);
+  assert.equal(tests?.execution?.exitCode, 3);
+  assert.equal(tests?.execution?.timedOut, false);
+  assert.equal(result.finalStatus, 'fail');
 });
 
 test('a command needing a shell is unavailable, never run another way', async t => {
   const { resolved, root } = await project(t, { build: 'node -e process.exit(0)' }, { build: true });
-  const report = await executeGates(resolved, { root, agent: 'qa-reviewer', execute: true });
-  assert.equal(gate(report, 'build')?.outcome, 'unavailable');
-  assert.equal(gate(report, 'build')?.refusal, 'shell-syntax');
-  assert.equal(gate(report, 'build')?.exitCode, null);
+  const result = await run(resolved, root, { execute: true });
+  assert.equal(gate(result, 'build')?.outcome, 'unavailable');
+  assert.equal(gate(result, 'build')?.reason, 'unsupported-command');
+  assert.equal(gate(result, 'build')?.execution?.exitCode, null);
+  assert.equal(gate(result, 'build')?.execution?.program, null, 'no process was started');
 });
 
 test('a command whose executable is absent is unavailable, not failed', async t => {
   const { resolved, root } = await project(t, { build: 'definitely-not-installed-xyz --version' }, { build: true });
-  const report = await executeGates(resolved, { root, agent: 'qa-reviewer', execute: true });
-  assert.equal(gate(report, 'build')?.outcome, 'unavailable');
-  assert.equal(gate(report, 'build')?.refusal, 'executable-not-found');
+  const result = await run(resolved, root, { execute: true });
+  assert.equal(gate(result, 'build')?.outcome, 'unavailable');
+  assert.equal(gate(result, 'build')?.reason, 'executable-not-found');
+  assert.equal(result.finalStatus, 'incomplete', 'an absent tool says nothing about the code');
 });
 
 test('a command that overruns the declared limit is killed and reported', async t => {
@@ -173,21 +227,29 @@ test('a command that overruns the declared limit is killed and reported', async 
     { build: true },
     { 'sleep.js': 'setTimeout(function () {}, 30000)\n' },
   );
-  const report = await executeGates(resolved, { root, agent: 'qa-reviewer', execute: true, timeoutSeconds: 1 });
-  const build = gate(report, 'build');
-  assert.equal(build?.timedOut, true);
-  assert.equal(build?.outcome, 'failed', 'a killed command has not passed');
+  const result = await run(resolved, root, { execute: true, timeoutSeconds: 1 });
+  const build = gate(result, 'build');
+  assert.equal(build?.execution?.timedOut, true);
+  assert.equal(build?.outcome, 'timed-out', 'a killed command has not passed');
+  assert.equal(result.finalStatus, 'fail');
 });
 
 test('gates needing a person are reported as unrun rather than attempted', async t => {
   const { resolved, root } = await project(t, { build: 'node --version' }, { build: true });
-  const report = await executeGates(resolved, { root, agent: 'qa-reviewer', execute: true });
+  const result = await run(resolved, root, { execute: true });
   for (const stage of ['review', 'human_approval']) {
-    assert.equal(gate(report, stage)?.outcome, 'unrun', stage);
-    assert.equal(gate(report, stage)?.refusal, 'manual', stage);
+    assert.equal(gate(result, stage)?.outcome, 'unrun', stage);
+    assert.equal(gate(result, stage)?.reason, 'manual', stage);
   }
   // A gate the project disabled is absent entirely, not reported as anything.
-  assert.equal(gate(report, 'lint'), undefined);
+  assert.equal(gate(result, 'lint'), undefined);
+  assert.equal(result.finalStatus, 'incomplete', 'a manual gate keeps the run incomplete');
+});
+
+test('the resolved absolute path never reaches a result, because it can name a user', async t => {
+  const { resolved, root } = await project(t, { build: 'node --version' }, { build: true });
+  const result = await run(resolved, root, { execute: true });
+  assert.equal(gate(result, 'build')?.execution?.program, 'node');
 });
 
 test('validation and resolution cannot reach the runner', async () => {

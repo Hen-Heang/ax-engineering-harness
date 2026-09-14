@@ -27,7 +27,8 @@ test('CLI returns nonzero for missing configuration and invalid usage', () => {
 test('CLI prints the capability matrix and says which part of it is enforced', () => {
   const result = run('policy');
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Only run_tests is enforced, by the gate runner. The rest are declarations./);
+  assert.match(result.stdout, /Only run_tests is enforced, and only where an agent actor asks the/);
+  assert.match(result.stdout, /Every other row is a declaration nothing yet checks./);
   assert.match(result.stdout, /database_write\s+high\s+database\s+denied to every agent/);
   assert.match(result.stdout, /create_pull_request.*human approval required/);
   assert.equal(run('policy', 'extra').status, 2);

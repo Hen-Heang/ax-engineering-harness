@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   executeQualityPlan, pipeline, type CommandExecutionResult, type GatePlan,
-  type QualityCommandRunner,
+  type QualityActor, type QualityCommandRunner,
 } from '../index.js';
+
+const HUMAN: QualityActor = { kind: 'human-cli' };
 
 function stage(id: string) {
   const found = pipeline.stages.find(item => item.id === id);
@@ -40,7 +42,7 @@ test('quality execution consumes a plan in order and passes only complete plans'
     return execution(command, 'passed');
   };
   const result = await executeQualityPlan([ready('build'), ready('lint')], {
-    root: process.cwd(), timeoutSeconds: 30, execute: true, runner,
+    root: process.cwd(), timeoutSeconds: 30, execute: true, actor: HUMAN, runner,
   });
   assert.deepEqual(calls, ['fixture build', 'fixture lint']);
   assert.deepEqual(result.gates.map(gate => gate.outcome), ['passed', 'passed']);
@@ -55,7 +57,7 @@ test('quality execution is fail-fast and leaves later commands unrun', async () 
     return execution(command, calls.length === 1 ? 'failed' : 'passed');
   };
   const result = await executeQualityPlan([ready('build'), ready('lint'), ready('typecheck')], {
-    root: process.cwd(), timeoutSeconds: 30, execute: true, runner,
+    root: process.cwd(), timeoutSeconds: 30, execute: true, actor: HUMAN, runner,
   });
   assert.deepEqual(calls, ['fixture build']);
   assert.equal(result.gates[0]?.outcome, 'failed');
@@ -67,7 +69,7 @@ test('quality execution is fail-fast and leaves later commands unrun', async () 
 test('timeouts and infrastructure errors are failures, while unsupported commands are unavailable', async () => {
   for (const status of ['timed-out', 'execution-error'] as const) {
     const result = await executeQualityPlan([ready('build')], {
-      root: process.cwd(), timeoutSeconds: 30, execute: true,
+      root: process.cwd(), timeoutSeconds: 30, execute: true, actor: HUMAN,
       runner: async command => execution(command, status),
     });
     assert.equal(result.gates[0]?.outcome, status);
@@ -75,7 +77,7 @@ test('timeouts and infrastructure errors are failures, while unsupported command
   }
 
   const unsupported = await executeQualityPlan([ready('build')], {
-    root: process.cwd(), timeoutSeconds: 30, execute: true,
+    root: process.cwd(), timeoutSeconds: 30, execute: true, actor: HUMAN,
     runner: async command => execution(command, 'unsupported'),
   });
   assert.equal(unsupported.gates[0]?.outcome, 'unavailable');
@@ -87,7 +89,7 @@ test('manual, unavailable, and planning-only gates remain incomplete and never p
   const manual: GatePlan = { stage: stage('review'), readiness: 'manual' };
   const unavailable: GatePlan = { stage: stage('security'), readiness: 'unavailable' };
   const planned = await executeQualityPlan([ready('build'), manual, unavailable], {
-    root: process.cwd(), timeoutSeconds: 30, execute: false,
+    root: process.cwd(), timeoutSeconds: 30, execute: false, actor: HUMAN,
   });
   assert.deepEqual(planned.gates.map(gate => gate.outcome), ['unrun', 'unrun', 'unavailable']);
   assert.equal(planned.finalStatus, 'incomplete');

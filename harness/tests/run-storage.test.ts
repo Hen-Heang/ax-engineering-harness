@@ -13,6 +13,7 @@ const execution: QualityExecutionResult = {
   finishedAt: '2026-09-14T01:00:00.125Z',
   durationMs: 125,
   executed: true,
+  denied: false,
   finalStatus: 'incomplete',
   gates: [
     {
