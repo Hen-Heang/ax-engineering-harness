@@ -8,9 +8,21 @@ Implemented:
 - `buildsystem/detect.ts` detects one build system at a selected root and chooses
   the platform runner form. It reads file names only and executes nothing.
 - `permissions/policy.ts` holds the capability vocabulary.
-- `permissions/decide.ts` answers what the definitions say about a role. The gate
-  runner consults it before running a command, which makes `run_tests` the one
-  enforced capability; every other answer is still only a declaration.
+- `permissions/decide.ts` answers what the definitions say about a role, as a plain
+  boolean, and builds the capability matrix the console renders.
+- `permissions/authorize.ts` is the decision function: given an actor, a capability,
+  a project, and an optional approval, it returns `allowed`, `denied`, or
+  `requires-approval`. It is pure — no disk, no environment, no ambient state — so a
+  decision is reproducible from its inputs alone. Anything unrecognised is denied:
+  an unknown role, an unknown capability, and an unknown actor all deny, and no
+  branch treats them as permitted. Approval is part of the request rather than
+  global state, names the capability it covers, and only ever converts
+  `requires-approval` into `allowed` — it can never lift a denial.
+
+  **It is not yet consulted by anything that acts.** `quality/execute.ts` still
+  enforces `run_tests` through `decide.ts`, which makes that the one capability
+  actually enforced today. Routing execution through `authorize` is the next step;
+  until then this module answers questions nobody is required to ask.
 - `agents/registry.ts` exposes roles, procedures, and vendor adapters, and refuses
   to load a set of definitions that contradict each other.
 - `quality/plan.ts` plans the gate pipeline for a resolved project and keeps

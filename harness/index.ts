@@ -22,6 +22,11 @@ export {
 export type { Capability } from './core/permissions/policy.js';
 export { can, capabilityMatrix, requiredTools } from './core/permissions/decide.js';
 export type { MatrixRow } from './core/permissions/decide.js';
+export { authorize, CLI_CAPABILITIES, isAllowed, toolEnabled } from './core/permissions/authorize.js';
+export type {
+  Actor, AuthorizationDecision, AuthorizationOutcome, AuthorizationRequest, DenialReason,
+  HumanApproval,
+} from './core/permissions/authorize.js';
 export type { ProjectConfig } from './config/project.generated.js';
 export type { ProfileDefinition } from './config/profile.generated.js';
 export type { AgentDefinition } from './config/agent.generated.js';
