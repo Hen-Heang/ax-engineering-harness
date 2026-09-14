@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background, Controls, Handle, Position, ReactFlow,
-  type Edge, type Node, type NodeProps,
+  type Edge, type Node, type NodeProps, type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { rowsOf, type Graph, type GraphNode } from '@/lib/graph-types';
@@ -17,6 +18,20 @@ const ROW_HEIGHT = 104;
 // measures an empty box on first paint and zooms all the way in.
 const NODE_WIDTH = 175;
 const NODE_HEIGHT = 58;
+
+/**
+ * How far the view may zoom out to fit.
+ *
+ * These graphs are tall and narrow — the architecture map is twelve rows deep and at
+ * most three wide — while the canvas is short and wide, so fitting one needs a good
+ * deal of zooming out. The previous floor of 0.75 was above what fitting required,
+ * which meant the first paint showed a cropped graph and left the reader panning to
+ * discover the rest. Fitting on arrival matters more than node text being
+ * comfortable, because a reader who cannot see the shape does not know what to pan
+ * towards; Expand then gives back the readability this costs.
+ */
+const FIT_MIN_ZOOM = 0.45;
+const FIT_OPTIONS = { padding: 0.12, minZoom: FIT_MIN_ZOOM, maxZoom: 1 } as const;
 
 const kindStyles: Record<string, string> = {
   actor: 'border-foreground/40',
@@ -56,6 +71,41 @@ function DiagramNode({ data }: NodeProps<Node<FlowNodeData>>) {
 
 const nodeTypes = { diagram: DiagramNode };
 
+/** The canvas itself, so the page and the expanded overlay render the same thing. */
+function Canvas({
+  nodes, edges, colorMode, onSelect, onReady,
+}: {
+  nodes: Node<FlowNodeData>[];
+  edges: Edge[];
+  colorMode: 'light' | 'dark';
+  onSelect: (id: string) => void;
+  onReady: (instance: ReactFlowInstance<Node<FlowNodeData>, Edge>) => void;
+}) {
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      fitView
+      fitViewOptions={FIT_OPTIONS}
+      minZoom={0.3}
+      maxZoom={1.6}
+      colorMode={colorMode}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      edgesReconnectable={false}
+      deleteKeyCode={null}
+      connectOnClick={false}
+      onInit={onReady}
+      onNodeClick={(_event, node) => onSelect(node.id)}
+      proOptions={{ hideAttribution: false }}
+    >
+      <Background gap={20} size={1} />
+      <Controls showInteractive={false} />
+    </ReactFlow>
+  );
+}
+
 /**
  * A read-only visualization of a harness graph.
  *
@@ -66,6 +116,11 @@ const nodeTypes = { diagram: DiagramNode };
 export function GraphView({ graph, label }: { graph: Graph; label: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+  const [expanded, setExpanded] = useState(false);
+  const inline = useRef<ReactFlowInstance<Node<FlowNodeData>, Edge> | null>(null);
+  const overlay = useRef<ReactFlowInstance<Node<FlowNodeData>, Edge> | null>(null);
+  const expandButton = useRef<HTMLButtonElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
 
   // React Flow's own "system" detection resolved to light on a dark page, so the
   // diagram follows the same class the rest of the console is themed by.
@@ -76,6 +131,31 @@ export function GraphView({ graph, label }: { graph: Graph; label: string }) {
     const observer = new MutationObserver(sync);
     observer.observe(root, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
+  }, []);
+
+  /*
+   * While the overlay is open it owns the viewport: the page behind must not scroll,
+   * Escape must close, and focus belongs to the overlay rather than to whatever the
+   * reader last touched underneath it.
+   */
+  useEffect(() => {
+    if (!expanded) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setExpanded(false);
+    };
+    document.addEventListener('keydown', onKey);
+    closeButton.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [expanded]);
+
+  const close = useCallback(() => {
+    setExpanded(false);
+    expandButton.current?.focus();
   }, []);
 
   const positions = useMemo(() => {
@@ -123,41 +203,83 @@ export function GraphView({ graph, label }: { graph: Graph; label: string }) {
   const selected = graph.nodes.find(node => node.id === selectedId) ?? null;
   const select = useCallback((id: string) => setSelectedId(current => (current === id ? null : id)), []);
 
+  /** Fits the whole graph, whichever canvas the reader is looking at. */
+  const fit = useCallback(() => {
+    const instance = expanded ? overlay.current : inline.current;
+    void instance?.fitView({ ...FIT_OPTIONS, duration: 200 });
+  }, [expanded]);
+
   return (
     <div className="flex flex-col gap-6">
-      <div
-        className="h-[30rem] w-full overflow-hidden rounded-lg border bg-card sm:h-[36rem]"
-        aria-label={`${label}. An equivalent list follows this diagram.`}
-        role="group"
-      >
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          fitView
-          // Clamp how far fitView may zoom out: seeing the whole shape is worth
-          // less than being able to read a node. Beyond this the reader pans.
-          fitViewOptions={{ padding: 0.12, minZoom: 0.75, maxZoom: 1 }}
-          minZoom={0.4}
-          maxZoom={1.6}
-          colorMode={colorMode}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          edgesReconnectable={false}
-          deleteKeyCode={null}
-          connectOnClick={false}
-          onNodeClick={(_event, node) => select(node.id)}
-          proOptions={{ hideAttribution: false }}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            Drag to pan, scroll to zoom, select a node for its detail. The diagram is read-only.
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={fit}>
+              Fit to view
+            </Button>
+            <Button
+              ref={expandButton}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setExpanded(true)}
+              aria-haspopup="dialog"
+            >
+              Expand
+            </Button>
+          </div>
+        </div>
+
+        <div
+          className="h-[32rem] w-full overflow-hidden rounded-lg border bg-card sm:h-[40rem] lg:h-[46rem]"
+          aria-label={`${label}. An equivalent list follows this diagram.`}
+          role="group"
         >
-          <Background gap={20} size={1} />
-          <Controls showInteractive={false} />
-        </ReactFlow>
+          <Canvas
+            nodes={nodes}
+            edges={edges}
+            colorMode={colorMode}
+            onSelect={select}
+            onReady={instance => { inline.current = instance; }}
+          />
+        </div>
       </div>
 
-      <p className="-mt-3 text-xs text-muted-foreground">
-        Drag to pan, scroll to zoom, and select a node for its detail. The diagram is
-        read-only. Everything in it is listed as text below.
-      </p>
+      {expanded && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-background"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${label}, expanded`}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-2.5">
+            <p className="truncate text-sm font-medium">{label}</p>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={fit}>
+                Fit to view
+              </Button>
+              <Button ref={closeButton} type="button" variant="outline" size="sm" onClick={close}>
+                Close
+              </Button>
+            </div>
+          </div>
+          <div className="min-h-0 flex-1">
+            <Canvas
+              nodes={nodes}
+              edges={edges}
+              colorMode={colorMode}
+              onSelect={select}
+              onReady={instance => { overlay.current = instance; }}
+            />
+          </div>
+          <p className="shrink-0 border-t px-4 py-2 text-xs text-muted-foreground">
+            Press Escape to close. Selecting a node here also selects it on the page behind.
+          </p>
+        </div>
+      )}
 
       {selected && <NodeDetail node={selected} />}
 
