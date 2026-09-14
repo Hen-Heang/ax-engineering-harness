@@ -28,6 +28,13 @@ export type RunRecord = {
    * Role that owned the task.
    */
   agent?: string;
+  /**
+   * Who the run was authorised as. A person at the CLI is not a role and carries no role identifier.
+   */
+  actor?: {
+    kind: "human-cli" | "agent";
+    role?: Identifier;
+  };
   profile: Identifier;
   status?: "completed" | "failed" | "blocked" | "abandoned";
   /**

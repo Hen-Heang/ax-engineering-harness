@@ -37,7 +37,7 @@ export {
   initialStatuses, pipeline, pipelinePassed, planQuality, summarize,
 } from './core/quality/plan.js';
 export type { GateOutcome, GatePlan, GateReadiness, GateStatus, Stage } from './core/quality/plan.js';
-export { EXECUTION_CAPABILITY, executeQualityPlan, mayExecute } from './core/quality/execute.js';
+export { authorizeExecution, EXECUTION_CAPABILITY, executeQualityPlan } from './core/quality/execute.js';
 export type {
   ExecuteQualityPlanOptions, QualityActor, QualityCommandRunner, QualityExecutionResult,
   QualityFinalStatus, QualityGateOutcome, QualityGateReason, QualityGateResult,

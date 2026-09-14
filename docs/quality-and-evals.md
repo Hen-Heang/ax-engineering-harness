@@ -65,11 +65,32 @@ them tells you anything about the code under test:
 | `unsupported-command` | The command needs shell syntax. The runner never switches to a shell. |
 | `executable-not-found` | The tool is not installed on this machine. |
 
-Execution is also the one point where a declared capability is enforced rather than
-described. The executor takes an explicit actor: a person running the CLI in their
-own checkout (`human-cli`), or an agent acting under a role, which must hold
-`run_tests`. An unrecognised role is denied rather than defaulted, and a denied run
-is `INCOMPLETE` — never a pass.
+### The authorization boundary
+
+Execution is the one point where a declared capability is enforced rather than
+described. The executor takes an explicit actor and the project declaration, and
+asks `authorize` for `run_tests` before it runs anything:
+
+```
+agent or CLI  ->  execution request  ->  authorize  ->  executor  ->  command
+```
+
+The decision is taken inside the executor rather than accepted as an argument, so a
+caller cannot supply an approval it did not obtain, and there is no arrangement of
+arguments that reaches a process without the answer being consulted. A test asserts
+that an unauthorised actor reaches no runner at all, not even a fake one.
+
+Three things can refuse a run, and each is reported rather than blurred:
+
+| Decision | Gate reason | Meaning |
+| --- | --- | --- |
+| `denied` (`actor-lacks-capability`) | `capability-denied` | The role does not hold `run_tests`. |
+| `denied` (`tool-disabled`) | `capability-denied` | The project switched off the `codebase` tool. |
+| `requires-approval` | `approval-required` | A person must approve first. |
+
+An unrecognised role is denied rather than defaulted, and a denied run is
+`INCOMPLETE` — never a pass. The decision is kept on the result, and the actor is
+persisted in the run record, so a run says under whose authority it ran.
 
 ### Windows batch launchers
 

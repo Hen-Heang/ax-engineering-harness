@@ -89,6 +89,7 @@ async function run(
     timeoutSeconds: options.timeoutSeconds ?? resolved.config.limits.max_duration_seconds,
     execute: options.execute,
     actor: options.actor ?? HUMAN,
+    project: resolved.config,
   });
 }
 

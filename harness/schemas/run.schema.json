@@ -21,6 +21,16 @@
     "finalStatus": { "enum": ["pass", "fail", "incomplete"] },
     "task": { "$ref": "#/definitions/text" },
     "agent": { "$ref": "#/definitions/identifier", "description": "Role that owned the task." },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "description": "Who the run was authorised as. A person at the CLI is not a role and carries no role identifier.",
+      "properties": {
+        "kind": { "enum": ["human-cli", "agent"] },
+        "role": { "$ref": "#/definitions/identifier" }
+      }
+    },
     "profile": { "$ref": "#/definitions/identifier" },
     "status": { "enum": ["completed", "failed", "blocked", "abandoned"] },
     "durationSeconds": { "type": "integer", "minimum": 0, "description": "Omit when the duration was not measured." },
@@ -77,13 +87,13 @@
       "then": {
         "properties": {
           "source": {}, "project": {}, "startedAt": {}, "finishedAt": {},
-          "durationMs": {}, "finalStatus": {}
+          "durationMs": {}, "finalStatus": {}, "actor": {}
         },
-        "required": ["source", "project", "startedAt", "finishedAt", "durationMs", "finalStatus"]
+        "required": ["source", "project", "startedAt", "finishedAt", "durationMs", "finalStatus", "actor"]
       },
       "else": {
         "properties": {
-          "agent": {}, "status": {}, "source": false, "project": false,
+          "agent": {}, "status": {}, "source": false, "project": false, "actor": false,
           "startedAt": false, "finishedAt": false, "durationMs": false,
           "finalStatus": false
         },

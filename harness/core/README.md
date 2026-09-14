@@ -19,10 +19,12 @@ Implemented:
   global state, names the capability it covers, and only ever converts
   `requires-approval` into `allowed` — it can never lift a denial.
 
-  **It is not yet consulted by anything that acts.** `quality/execute.ts` still
-  enforces `run_tests` through `decide.ts`, which makes that the one capability
-  actually enforced today. Routing execution through `authorize` is the next step;
-  until then this module answers questions nobody is required to ask.
+  `quality/execute.ts` consults it before running anything, which makes `run_tests`
+  the one capability actually enforced today. The decision is taken *inside* the
+  executor rather than accepted as an argument, so a caller cannot hand in an
+  approval it did not obtain, and there is no arrangement of arguments that reaches
+  a process without the answer being consulted. Every other capability is still a
+  declaration: no tool layer consults them, so they must not be read as a boundary.
 - `agents/registry.ts` exposes roles, procedures, and vendor adapters, and refuses
   to load a set of definitions that contradict each other.
 - `quality/plan.ts` plans the gate pipeline for a resolved project and keeps

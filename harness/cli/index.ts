@@ -5,7 +5,8 @@ import { resolveProject } from '../core/profiles/resolve.js';
 import { capabilityMatrix } from '../core/permissions/decide.js';
 import { initialStatuses, pipelinePassed, planQuality, summarize } from '../core/quality/plan.js';
 import {
-  EXECUTION_CAPABILITY, executeQualityPlan, type QualityActor, type QualityGateResult,
+  authorizeExecution, EXECUTION_CAPABILITY, executeQualityPlan,
+  type QualityActor, type QualityGateResult,
 } from '../core/quality/execute.js';
 import { buildRunRecord } from '../core/observability/run.js';
 import { persistRunRecord } from '../core/observability/storage.js';
@@ -91,7 +92,8 @@ function gateDetail(gate: QualityGateResult): string {
   if (gate.reason === 'shell-required') {
     return 'Needs a shell to start on this platform; the harness will not start one';
   }
-  if (gate.reason === 'capability-denied') return 'The acting role may not run commands';
+  if (gate.reason === 'capability-denied') return 'The acting actor may not run commands';
+  if (gate.reason === 'approval-required') return 'Awaiting human approval';
   if (gate.execution?.status === 'execution-error') {
     return `Could not execute (${gate.execution.errorCode ?? 'spawn-error'})`;
   }
@@ -119,11 +121,27 @@ async function quality(args: string[]): Promise<void> {
     console.log(`Project: ${config.project.name}`);
     console.log(`Profile: ${profile.id}`);
     console.log(`Root: ${outcome.root}`);
-    console.log('Commands to execute:');
-    for (const entry of plan.filter(item => item.readiness === 'ready')) {
-      console.log(`  ${entry.stage.title}: ${entry.command}`);
+
+    /*
+     * Say up front whether this is allowed at all. The executor decides for itself
+     * regardless — this only avoids announcing a list of commands the actor may
+     * not run.
+     */
+    const decision = authorizeExecution(CLI_ACTOR, config);
+    const actorLabel = CLI_ACTOR.kind === 'agent' ? `agent ${CLI_ACTOR.role}` : 'human at the CLI';
+    console.log(`Actor: ${actorLabel}`);
+    console.log(`Authorization: ${EXECUTION_CAPABILITY} ${decision.outcome}${
+      decision.outcome === 'denied' ? ` (${decision.reason})` : ''}`);
+
+    if (decision.outcome === 'allowed') {
+      console.log('Commands to execute:');
+      for (const entry of plan.filter(item => item.readiness === 'ready')) {
+        console.log(`  ${entry.stage.title}: ${entry.command}`);
+      }
+      console.log(`Limits: ${config.limits.max_duration_seconds}s per command`);
+    } else {
+      console.log('No command will be run.');
     }
-    console.log(`Limits: ${config.limits.max_duration_seconds}s per command`);
     console.log('');
 
     const result = await executeQualityPlan(plan, {
@@ -131,6 +149,7 @@ async function quality(args: string[]): Promise<void> {
       timeoutSeconds: config.limits.max_duration_seconds,
       execute: true,
       actor: CLI_ACTOR,
+      project: config,
     });
     for (const gate of result.gates) {
       console.log(gate.title.toUpperCase());
@@ -147,6 +166,7 @@ async function quality(args: string[]): Promise<void> {
     const record = buildRunRecord({
       project: config.project.name,
       profile: profile.id,
+      actor: CLI_ACTOR,
       execution: result,
     });
     if (!record.valid) return report(record.issues);

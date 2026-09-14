@@ -7,6 +7,10 @@ import {
   buildRunRecord, createRunId, getRun, loadRunRecord, persistRunRecord, validateRunRecord,
   type QualityExecutionResult,
 } from '../index.js';
+import { getCapability } from '../index.js';
+
+const runTests = getCapability('run_tests');
+if (!runTests) throw new Error('the policy must declare run_tests');
 
 const execution: QualityExecutionResult = {
   startedAt: '2026-09-14T01:00:00.000Z',
@@ -14,6 +18,7 @@ const execution: QualityExecutionResult = {
   durationMs: 125,
   executed: true,
   denied: false,
+  authorization: { outcome: 'allowed', capability: runTests },
   finalStatus: 'incomplete',
   gates: [
     {
@@ -30,7 +35,10 @@ const execution: QualityExecutionResult = {
 };
 
 function recorded(id = 'run-test-record') {
-  const result = buildRunRecord({ id, project: 'test-project', profile: 'harness-tooling', execution });
+  const result = buildRunRecord({
+    id, project: 'test-project', profile: 'harness-tooling', execution,
+    actor: { kind: 'human-cli' },
+  });
   assert.equal(result.valid, true, result.valid ? '' : JSON.stringify(result.issues));
   if (!result.valid) throw new Error('Invalid recorded-run fixture');
   return result.record;
@@ -94,4 +102,35 @@ test('run identifiers are unique, opaque, and schema-safe', () => {
   assert.notEqual(first, second);
   assert.match(first, /^run-[a-f0-9-]{36}$/);
   assert.ok(first.length <= 64);
+});
+
+test('a recorded run says under whose authority it ran, and cannot omit it', () => {
+  /*
+   * A run record that cannot say who was authorised is not provenance. The schema
+   * requires the actor for a recorded run, and a person at the CLI is recorded as
+   * exactly that rather than being flattened into a role that never acted.
+   */
+  const human = recorded();
+  assert.deepEqual(human.actor, { kind: 'human-cli' });
+
+  const agent = buildRunRecord({
+    id: 'run-agent-record', project: 'test-project', profile: 'harness-tooling', execution,
+    actor: { kind: 'agent', role: 'qa-reviewer' },
+  });
+  assert.equal(agent.valid, true, agent.valid ? '' : JSON.stringify(agent.issues));
+  if (!agent.valid) throw new Error('unreachable');
+  assert.deepEqual(agent.record.actor, { kind: 'agent', role: 'qa-reviewer' });
+
+  const { actor: _actor, ...withoutActor } = human;
+  assert.equal(validateRunRecord(withoutActor).valid, false, 'a recorded run must name its actor');
+});
+
+test('a shipped example cannot carry executor provenance for an actor', () => {
+  const example = getRun('example-cancellation');
+  assert.ok(example);
+  assert.equal(
+    validateRunRecord({ ...example, actor: { kind: 'human-cli' } }).valid,
+    false,
+    'an example must not look like something that actually ran',
+  );
 });

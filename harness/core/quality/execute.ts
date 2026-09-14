@@ -1,9 +1,10 @@
-import { can } from '../permissions/decide.js';
+import { authorize, type Actor, type AuthorizationDecision } from '../permissions/authorize.js';
 import { runCommand } from '../execution/command-runner.js';
+import type { ProjectConfig } from '../../config/project.generated.js';
 import type { CommandExecutionResult, CommandRunnerOptions } from '../execution/types.js';
 import type { GateOutcome, GatePlan } from './plan.js';
 
-/** The capability an agent must hold to run a declared quality command. */
+/** The capability an actor must hold to run a declared quality command. */
 export const EXECUTION_CAPABILITY = 'run_tests';
 
 /**
@@ -14,12 +15,18 @@ export const EXECUTION_CAPABILITY = 'run_tests';
  * An agent acts under a role, and that role's declared capabilities decide the
  * answer. Anything unrecognised is denied.
  */
-export type QualityActor =
-  | { kind: 'human-cli' }
-  | { kind: 'agent'; role: string };
+export type QualityActor = Actor;
 
-export function mayExecute(actor: QualityActor): boolean {
-  return actor.kind === 'human-cli' ? true : can(actor.role, EXECUTION_CAPABILITY);
+/**
+ * Whether this actor may run this project's declared commands.
+ *
+ * Exported so a caller can ask before doing anything — the CLI says so up front
+ * rather than printing a plan it is not allowed to carry out. Asking is not what
+ * makes the decision binding: `executeQualityPlan` calls this itself, so there is no
+ * arrangement of arguments that reaches a process without the answer being consulted.
+ */
+export function authorizeExecution(actor: Actor, project: ProjectConfig): AuthorizationDecision {
+  return authorize({ actor, capability: EXECUTION_CAPABILITY, project });
 }
 
 export type QualityGateOutcome = GateOutcome | 'timed-out' | 'execution-error';
@@ -32,7 +39,8 @@ export type QualityGateReason =
   | 'unsupported-command'
   | 'executable-not-found'
   | 'shell-required'
-  | 'capability-denied';
+  | 'capability-denied'
+  | 'approval-required';
 
 export interface QualityGateResult {
   stage: string;
@@ -50,6 +58,8 @@ export interface QualityExecutionResult {
   executed: boolean;
   /** True when the actor may not run commands at all. */
   denied: boolean;
+  /** The decision that permitted or refused the run, kept so a result explains itself. */
+  authorization: AuthorizationDecision;
   gates: QualityGateResult[];
   finalStatus: QualityFinalStatus;
 }
@@ -65,6 +75,12 @@ export interface ExecuteQualityPlanOptions {
   execute: boolean;
   /** Whose capabilities authorise the run. */
   actor: QualityActor;
+  /**
+   * The declaration the actor is authorised against. Required, because the project
+   * decides which tools exist at all, and a decision made without it would be a
+   * decision about a role in the abstract rather than about this repository.
+   */
+  project: ProjectConfig;
   maxOutputBytes?: number;
   env?: NodeJS.ProcessEnv;
   platform?: NodeJS.Platform;
@@ -104,7 +120,18 @@ export async function executeQualityPlan(
 ): Promise<QualityExecutionResult> {
   const started = Date.now();
   const runner = options.runner ?? runCommand;
-  const permitted = mayExecute(options.actor);
+
+  /*
+   * The authorization boundary. An agent and a person share this engine, but their
+   * authority comes from the same decision function rather than from whichever
+   * caller reached it. The decision is taken here, not accepted as an argument, so
+   * no caller can hand in an approval it did not obtain.
+   */
+  const authorization = authorizeExecution(options.actor, options.project);
+  const permitted = authorization.outcome === 'allowed';
+  const refusal: QualityGateReason =
+    authorization.outcome === 'requires-approval' ? 'approval-required' : 'capability-denied';
+
   const gates: QualityGateResult[] = [];
   let stopped = false;
   let commandStarted = false;
@@ -120,7 +147,7 @@ export async function executeQualityPlan(
       continue;
     }
     if (!permitted) {
-      gates.push(unexecuted(entry, 'capability-denied', 'unrun'));
+      gates.push(unexecuted(entry, refusal, 'unrun'));
       continue;
     }
     if (!options.execute) {
@@ -180,6 +207,7 @@ export async function executeQualityPlan(
     durationMs: finished - started,
     executed: commandStarted,
     denied: !permitted,
+    authorization,
     gates,
     finalStatus: finalStatus(gates),
   };

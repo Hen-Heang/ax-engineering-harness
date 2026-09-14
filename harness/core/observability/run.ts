@@ -4,7 +4,7 @@ import schema from '../../schemas/run.schema.json' with { type: 'json' };
 import exampleCancellation from '../../runs/example-cancellation/run.json' with { type: 'json' };
 import type { RunRecord } from '../../config/run.generated.js';
 import type { ConfigIssue } from '../../config/validate.js';
-import type { QualityExecutionResult } from '../quality/execute.js';
+import type { QualityActor, QualityExecutionResult } from '../quality/execute.js';
 
 const validateSchema = new Ajv({ allErrors: true, strict: true }).compile<RunRecord>(schema);
 
@@ -69,6 +69,8 @@ export interface RunRecordInputs {
   id?: string;
   project: string;
   profile: string;
+  /** Who the run was authorised as. Recorded so a run says under whose authority it ran. */
+  actor: QualityActor;
   execution: QualityExecutionResult;
   retries?: number;
 }
@@ -83,6 +85,9 @@ export function buildRunRecord(inputs: RunRecordInputs): RunValidation {
     task: 'Execute the resolved quality plan.',
     project: inputs.project,
     profile: inputs.profile,
+    actor: inputs.actor.kind === 'agent'
+      ? { kind: 'agent', role: inputs.actor.role }
+      : { kind: 'human-cli' },
     startedAt: inputs.execution.startedAt,
     finishedAt: inputs.execution.finishedAt,
     durationMs: inputs.execution.durationMs,
