@@ -88,9 +88,19 @@ export async function resolveExecutable(
   const extensions = candidateExtensions(platform, env, name);
 
   const explicit = name.includes('/') || name.includes('\\');
+  const path = (env.PATH ?? env.Path ?? '').split(delimiter).filter(part => part.length > 0);
+
+  /*
+   * Windows searches the current directory before PATH, and POSIX deliberately does
+   * not — leaving `.` out of PATH is how a POSIX system avoids running whatever a
+   * directory happens to contain. Both behaviours are honoured as written, because
+   * the Windows wrapper form a profile declares is a bare `mvnw.cmd` or
+   * `gradlew.bat` that only resolves under the first rule, while the POSIX form is
+   * an explicit `./mvnw` that needs no such allowance.
+   */
   const roots = explicit
     ? [isAbsolute(name) ? '' : options.cwd]
-    : (env.PATH ?? env.Path ?? '').split(delimiter).filter(part => part.length > 0);
+    : (platform === 'win32' ? [options.cwd, ...path] : path);
 
   for (const root of roots) {
     const base = explicit

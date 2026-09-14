@@ -15,6 +15,17 @@ Implemented:
   case it exists for. It produces no readiness score: a percentage would put a number
   on a judgement nobody made, and invite the number to be improved rather than the
   project.
+- `init/plan.ts` proposes an adoption for a project: it reads manifest *names* at one
+  root, recommends a profile, and derives a declaration from what that profile can
+  actually supply, so a generated file validates and resolves on the first try. It
+  opens no build file and never scans recursively. Where detection is ambiguous — two
+  build systems, or two profiles serving one — it refuses and asks, rather than
+  picking one.
+- `init/apply.ts` writes a plan that was already shown. Every file is opened `wx`, so
+  refusing to overwrite is a property of the system call rather than of a check made
+  earlier: a file that appears between planning and writing is still safe. An existing
+  `AGENTS.md` is left byte-for-byte alone and a template is written beside it, because
+  merging repository instructions is a judgement rather than a transformation.
 - `permissions/policy.ts` holds the capability vocabulary.
 - `permissions/decide.ts` answers what the definitions say about a role, as a plain
   boolean, and builds the capability matrix the console renders.

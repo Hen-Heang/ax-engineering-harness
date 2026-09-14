@@ -1,4 +1,4 @@
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { loadProject } from '../config/load.js';
 import { checkContextFiles } from '../core/context/resolve.js';
 import { resolveProject } from '../core/profiles/resolve.js';
@@ -11,6 +11,8 @@ import {
 import { buildRunRecord } from '../core/observability/run.js';
 import { persistRunRecord } from '../core/observability/storage.js';
 import { inspectProject, type DoctorReport } from '../core/doctor/inspect.js';
+import { planInit } from '../core/init/plan.js';
+import { applyInit } from '../core/init/apply.js';
 import type { ConfigIssue } from '../config/validate.js';
 
 const usage = [
@@ -18,6 +20,7 @@ const usage = [
   '       npm run ax -- quality [--execute] [path/to/.ax/project.yaml]',
   '       npm run ax -- policy',
   '       npm run ax -- doctor [path/to/.ax/project.yaml]',
+  '       npm run ax -- init [--write] [--profile <id>] [--name <name>] [directory]',
 ].join('\n');
 
 async function resolveFrom(argument: string | undefined) {
@@ -291,6 +294,69 @@ async function doctor(argument: string | undefined): Promise<void> {
   if (report.configuration.status === 'fail') process.exitCode = 1;
 }
 
+function flagValue(args: string[], flag: string): string | undefined {
+  const index = args.indexOf(flag);
+  return index >= 0 ? args[index + 1] : undefined;
+}
+
+async function init(args: string[]): Promise<void> {
+  const write = args.includes('--write');
+  const profile = flagValue(args, '--profile');
+  const name = flagValue(args, '--name');
+  const consumed = new Set([profile, name].filter(Boolean));
+  const positional = args.filter(arg => !arg.startsWith('-') && !consumed.has(arg));
+  const root = resolve(positional[0] ?? '.');
+
+  const plan = await planInit({
+    root,
+    ...(profile ? { profile } : {}),
+    ...(name ? { name } : {}),
+  });
+
+  console.log('AX Project Init');
+  console.log('');
+  console.log(`Root: ${plan.root}`);
+  console.log(`Detected: ${plan.detection.manifests.join(', ') || 'no build manifest'}`);
+  console.log(`Project name: ${plan.name ?? 'undetermined'}`);
+  console.log(`Profile: ${plan.profile ? `${plan.profile.id} (${plan.profile.source})` : 'none'}`);
+  if (plan.candidates.length > 0) console.log(`Candidates: ${plan.candidates.join(', ')}`);
+
+  if (plan.blockers.length > 0) {
+    console.log('');
+    console.log('Cannot propose an adoption:');
+    for (const blocker of plan.blockers) console.log(`  - ${blocker}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log('');
+  console.log('Files');
+  for (const file of plan.files) {
+    const verb = file.status === 'create' ? 'create' : 'keep  ';
+    console.log(`  ${verb}  ${file.path.padEnd(28)}${file.note ?? ''}`);
+  }
+
+  if (!write) {
+    console.log('');
+    console.log('Nothing was written. Re-run with --write to create the files listed above.');
+    console.log('Existing files are never replaced, whatever the flag says.');
+    return;
+  }
+
+  const applied = await applyInit(plan);
+  console.log('');
+  console.log('Result');
+  for (const result of applied.written) {
+    console.log(`  ${result.outcome.padEnd(16)}${result.path}${result.code ? `  (${result.code})` : ''}`);
+  }
+  if (applied.written.some(result => result.outcome === 'failed')) {
+    process.exitCode = 1;
+    return;
+  }
+  console.log('');
+  console.log(`Next: npm run ax -- doctor ${join(plan.root, '.ax', 'project.yaml')}`);
+}
+
 function showPolicy(): void {
   console.log('Capability matrix declared in harness/policies/default/policy.json.');
   console.log(`Only ${EXECUTION_CAPABILITY} is enforced, and only where an agent actor asks the`);
@@ -314,6 +380,8 @@ if (command === 'validate' && args.length <= 1 && !args[0]?.startsWith('-')) {
   await quality(args);
 } else if (command === 'doctor' && args.length <= 1 && !args[0]?.startsWith('-')) {
   await doctor(args[0]);
+} else if (command === 'init') {
+  await init(args);
 } else if (command === 'policy' && args.length === 0) {
   showPolicy();
 } else {

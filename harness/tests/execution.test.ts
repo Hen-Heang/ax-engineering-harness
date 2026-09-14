@@ -118,6 +118,31 @@ test('the executable is resolved without a shell, and a missing one is reported'
   assert.equal(await resolveExecutable('definitely-not-installed-xyz', { cwd: process.cwd() }), null);
 });
 
+test('a bare name resolves from the project directory on Windows, but never on POSIX', async t => {
+  /*
+   * The Windows wrapper form a profile declares is a bare `mvnw.cmd` or
+   * `gradlew.bat`, which only resolves because Windows searches the current
+   * directory before PATH. POSIX deliberately does not, since leaving `.` out of
+   * PATH is how it avoids running whatever a directory happens to contain — and the
+   * POSIX wrapper form is an explicit `./mvnw` that needs no allowance.
+   */
+  const root = await mkdtemp(join(tmpdir(), 'ax-wrapper-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(join(root, 'mvnw.cmd'), '@echo off\n');
+  await writeFile(join(root, 'mvnw'), '#!/bin/sh\n');
+
+  const env = { PATH: '', PATHEXT: '.COM;.EXE;.BAT;.CMD' };
+  assert.equal(
+    await resolveExecutable('mvnw.cmd', { cwd: root, env, platform: 'win32' }),
+    join(root, 'mvnw.cmd'),
+  );
+  assert.equal(
+    await resolveExecutable('mvnw', { cwd: root, env, platform: 'linux' }),
+    null,
+    'a bare name must not be taken from the working directory on POSIX',
+  );
+});
+
 test('on Windows a launcher wins over the extensionless script beside it', async t => {
   /*
    * Node and Gradle both ship a POSIX shell script next to the Windows launcher:

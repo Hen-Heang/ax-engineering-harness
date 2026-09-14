@@ -64,6 +64,7 @@ Run `npx playwright install chromium` once before the browser tests can run.
 
 ```sh
 npm ci
+npm run ax -- init          # propose an adoption for a project, writing nothing
 npm run ax -- validate      # resolve and check a project declaration
 npm run ax -- doctor        # report whether a project is ready, running nothing
 npm run ax -- quality       # plan the quality pipeline for a project
@@ -78,9 +79,24 @@ npm run dev --workspace @ax-harness/web   # run the console locally
 
 ## Applying to another project
 
-Create `.ax/project.yaml` using the [current declaration](.ax/project.yaml) as a
-structural example, replacing commands and context references with your own.
-Validate it from this checkout:
+`ax init` proposes a starting point. It reads manifest names at the project root,
+recommends a profile, and shows exactly what it would create — writing nothing until
+you ask again with `--write`:
+
+```sh
+npm run ax -- init /path/to/your-project
+npm run ax -- init --write /path/to/your-project
+```
+
+It enables only the gates the chosen profile supplies a command for, so the generated
+declaration validates immediately. Existing files are never replaced: an `AGENTS.md`
+already present is left exactly as it is and a template is written beside it for you
+to merge by hand. Where two build systems are present, it refuses to choose and asks
+for `--profile`.
+
+To write the declaration yourself instead, use the
+[current declaration](.ax/project.yaml) as a structural example, replacing commands
+and context references with your own. Validate it from this checkout:
 
 ```sh
 npm run ax -- validate /path/to/your-project/.ax/project.yaml

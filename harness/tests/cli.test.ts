@@ -129,3 +129,47 @@ test('CLI doctor exits nonzero for a project that has not adopted the harness', 
   assert.match(result.stdout, /project.yaml\s+FAIL/);
   assert.match(result.stdout, /has not adopted the harness yet/);
 });
+
+test('CLI init plans without writing, and only writes when told to', t => {
+  const base = mkdtempSync(join(tmpdir(), 'ax-init-cli-'));
+  t.after(() => rmSync(base, { recursive: true, force: true }));
+  const projectRoot = join(base, 'demo-service');
+  mkdirSync(projectRoot);
+  writeFileSync(join(projectRoot, 'pom.xml'), '<project><modelVersion>4.0.0</modelVersion></project>\n');
+
+  const planned = run('init', projectRoot);
+  assert.equal(planned.status, 0, planned.stderr);
+  assert.match(planned.stdout, /Profile: java-spring \(detected\)/);
+  assert.match(planned.stdout, /create\s+\.ax\/project\.yaml/);
+  assert.match(planned.stdout, /Nothing was written/);
+  assert.deepEqual(readdirSync(projectRoot), ['pom.xml'], 'planning must create nothing');
+
+  const written = run('init', '--write', projectRoot);
+  assert.equal(written.status, 0, written.stderr);
+  assert.match(written.stdout, /written\s+\.ax\/project\.yaml/);
+  assert.deepEqual(readdirSync(projectRoot).sort(), ['.ax', 'AGENTS.md', 'pom.xml']);
+
+  // The generated declaration is immediately usable, which is the point of it.
+  const doctor = run('doctor', join(projectRoot, '.ax', 'project.yaml'));
+  assert.equal(doctor.status, 0, doctor.stderr);
+  assert.match(doctor.stdout, /project\.yaml\s+PASS/);
+
+  // Re-running writes nothing further and replaces nothing.
+  const again = run('init', '--write', projectRoot);
+  assert.equal(again.status, 0, again.stderr);
+  assert.match(again.stdout, /skipped-exists\s+\.ax\/project\.yaml/);
+});
+
+test('CLI init refuses to choose between build systems', t => {
+  const base = mkdtempSync(join(tmpdir(), 'ax-init-cli-'));
+  t.after(() => rmSync(base, { recursive: true, force: true }));
+  const projectRoot = join(base, 'ambiguous-service');
+  mkdirSync(projectRoot);
+  writeFileSync(join(projectRoot, 'pom.xml'), '<project/>\n');
+  writeFileSync(join(projectRoot, 'package.json'), '{"name":"x","private":true}\n');
+
+  const result = run('init', projectRoot);
+  assert.equal(result.status, 1, 'an ambiguous root is a failure, not a guess');
+  assert.match(result.stdout, /Choose one with --profile/);
+  assert.deepEqual(readdirSync(projectRoot).sort(), ['package.json', 'pom.xml']);
+});

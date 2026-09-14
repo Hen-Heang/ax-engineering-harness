@@ -52,6 +52,10 @@ export { buildRunRecord, createRunId, getRun, isMeasured, runIds, validateRunRec
 export type { RunRecordInputs, RunValidation } from './core/observability/run.js';
 export { loadRunRecord, MAX_RUN_RECORD_BYTES, persistRunRecord } from './core/observability/storage.js';
 export type { LoadRunResult, PersistRunResult } from './core/observability/storage.js';
+export { detectStack, planInit, toProjectName } from './core/init/plan.js';
+export type { Detection, InitOptions, InitPlan, PlannedFile, PlannedFileStatus } from './core/init/plan.js';
+export { applyInit } from './core/init/apply.js';
+export type { ApplyResult, WriteOutcome, WriteResult } from './core/init/apply.js';
 export { inspectProject } from './core/doctor/inspect.js';
 export type {
   CommandAvailability, ContextFinding, DoctorOptions, DoctorReport, QualityFinding, ToolFinding,
