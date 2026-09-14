@@ -52,6 +52,10 @@ export { buildRunRecord, createRunId, getRun, isMeasured, runIds, validateRunRec
 export type { RunRecordInputs, RunValidation } from './core/observability/run.js';
 export { loadRunRecord, MAX_RUN_RECORD_BYTES, persistRunRecord } from './core/observability/storage.js';
 export type { LoadRunResult, PersistRunResult } from './core/observability/storage.js';
+export { inspectProject } from './core/doctor/inspect.js';
+export type {
+  CommandAvailability, ContextFinding, DoctorOptions, DoctorReport, QualityFinding, ToolFinding,
+} from './core/doctor/inspect.js';
 export { checkHandoffDocument, requiredHandoffSections, validateHandoffRecord } from './core/handoff/check.js';
 export type { HandoffValidation } from './core/handoff/check.js';
 export type { PipelineDefinition } from './config/pipeline.generated.js';

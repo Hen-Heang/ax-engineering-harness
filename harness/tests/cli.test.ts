@@ -108,3 +108,24 @@ limits:
   assert.equal(record.source, 'local-executor');
   assert.equal(record.finalStatus, 'incomplete');
 });
+
+test('CLI doctor reports a project factually and runs no command', () => {
+  const result = run('doctor');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /AX Project Doctor/);
+  assert.match(result.stdout, /profile\s+harness-tooling/);
+  assert.match(result.stdout, /Build\s+AVAILABLE/);
+  assert.match(result.stdout, /github\s+DISABLED/);
+  assert.match(result.stdout, /authorization\s+allowed/);
+  assert.match(result.stdout, /No project command was executed/);
+  // No invented readiness score. Diagnostics are factual or they are not offered.
+  assert.equal(/\b\d{1,3}%/.test(result.stdout), false, 'the doctor must not score readiness');
+  assert.equal(run('doctor', '--nope').status, 2);
+});
+
+test('CLI doctor exits nonzero for a project that has not adopted the harness', () => {
+  const result = run('doctor', 'no-such-project/.ax/project.yaml');
+  assert.equal(result.status, 1, 'an unusable project is a failure, not a clean report');
+  assert.match(result.stdout, /project.yaml\s+FAIL/);
+  assert.match(result.stdout, /has not adopted the harness yet/);
+});

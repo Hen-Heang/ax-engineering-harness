@@ -43,7 +43,15 @@ export async function loadProject(file: string): Promise<ValidationResult> {
     }
     if (total > MAX_CONFIG_BYTES) return failure('yaml.too_large', 'Configuration exceeds the 64 KiB limit.');
     return parseProject(new TextDecoder('utf-8', { fatal: true }).decode(buffer.subarray(0, total)));
-  } catch {
+  } catch (error) {
+    /*
+     * An absent declaration is the ordinary state of a project that has not adopted
+     * the harness yet, and `ax doctor` exists to be run there. Reporting it as an
+     * encoding problem would misdiagnose the most common case it will ever see.
+     */
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return failure('file.missing', 'No configuration exists at this path.');
+    }
     return failure('file.unreadable', 'Configuration could not be read as a UTF-8 file.');
   } finally {
     await handle?.close();

@@ -65,7 +65,9 @@ Run `npx playwright install chromium` once before the browser tests can run.
 ```sh
 npm ci
 npm run ax -- validate      # resolve and check a project declaration
+npm run ax -- doctor        # report whether a project is ready, running nothing
 npm run ax -- quality       # plan the quality pipeline for a project
+npm run ax -- quality --execute   # actually run the declared command gates
 npm run ax -- policy        # print the capability matrix
 npm run e2e                 # browser tests at four widths, with accessibility checks
 npm run check               # everything above, including the browser tests
@@ -82,7 +84,12 @@ Validate it from this checkout:
 
 ```sh
 npm run ax -- validate /path/to/your-project/.ax/project.yaml
+npm run ax -- doctor /path/to/your-project/.ax/project.yaml
 ```
+
+`doctor` reports what is declared, what resolves on disk, and which gates could run,
+then lists what is missing. It executes no project command, so it is safe to point at
+a repository before you trust it.
 
 `project.profile` must name a built-in profile. A profile may fill in commands the
 declaration omits; commands you declare always win. Set `project.build_system`

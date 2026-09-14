@@ -10,12 +10,14 @@ import {
 } from '../core/quality/execute.js';
 import { buildRunRecord } from '../core/observability/run.js';
 import { persistRunRecord } from '../core/observability/storage.js';
+import { inspectProject, type DoctorReport } from '../core/doctor/inspect.js';
 import type { ConfigIssue } from '../config/validate.js';
 
 const usage = [
   'Usage: npm run ax -- validate [path/to/.ax/project.yaml]',
   '       npm run ax -- quality [--execute] [path/to/.ax/project.yaml]',
   '       npm run ax -- policy',
+  '       npm run ax -- doctor [path/to/.ax/project.yaml]',
 ].join('\n');
 
 async function resolveFrom(argument: string | undefined) {
@@ -198,6 +200,97 @@ async function quality(args: string[]): Promise<void> {
   console.log('No gate was executed. Readiness is not an outcome, and unrun is not a pass.');
 }
 
+const LABELS: Record<string, string> = {
+  available: 'AVAILABLE',
+  'not-installed': 'NOT INSTALLED',
+  unsupported: 'UNSUPPORTED',
+  'not-configured': 'NOT CONFIGURED',
+  disabled: 'DISABLED',
+  manual: 'MANUAL',
+};
+
+function section(title: string): void {
+  console.log('');
+  console.log(title);
+}
+
+function row(label: string, value: string): void {
+  console.log(`  ${label.padEnd(22)}${value}`);
+}
+
+function render(report: DoctorReport): void {
+  console.log('AX Project Doctor');
+  section('Project');
+  row('name', report.project ?? 'unknown');
+  row('root', report.root);
+  if (report.profile) row('profile', `${report.profile.id} (${report.profile.status})`);
+
+  section('Configuration');
+  row('project.yaml', report.configuration.status.toUpperCase());
+  for (const issue of report.configuration.issues) {
+    console.log(`    ${issue.path} [${issue.code}] ${issue.message}`);
+  }
+  if (report.configuration.status === 'fail') {
+    console.log('');
+    console.log('Recommendations');
+    for (const item of report.recommendations) console.log(`  - ${item}`);
+    return;
+  }
+
+  section('Context');
+  if (report.context.length === 0) console.log('  none declared');
+  for (const entry of report.context) {
+    row(entry.key, `${entry.status === 'present' ? 'PRESENT' : 'MISSING'}  ${entry.path}`);
+  }
+
+  section('Build system');
+  if (report.buildSystem) {
+    const wrapper = report.buildSystem.wrapper ? 'wrapper present' : 'no wrapper; PATH not verified';
+    row(report.buildSystem.id, `${report.buildSystem.selection.toUpperCase()}  ${report.buildSystem.runner ?? ''} (${wrapper})`);
+  } else if (report.areas.length > 0) {
+    for (const area of report.areas) row(area.id, `${area.buildSystem}  ${area.path}`);
+  } else {
+    console.log('  none detected');
+  }
+
+  section('Quality');
+  for (const entry of report.quality) {
+    const suffix = entry.command ? `  ${entry.command}${entry.source ? ` [${entry.source}]` : ''}` : '';
+    row(entry.title, `${LABELS[entry.availability] ?? entry.availability}${suffix}`);
+  }
+
+  section('Tools');
+  for (const tool of report.tools) {
+    row(tool.id, `${tool.enabled ? 'ENABLED' : 'DISABLED'}${tool.mode ? `  (${tool.mode})` : ''}`);
+  }
+
+  section('Evals');
+  row('definitions', String(report.evals));
+
+  if (report.execution) {
+    section('Execution');
+    row('runnable now', `${report.execution.runnable} of ${report.execution.expected} command gates`);
+    row('authorization', report.execution.authorization);
+  }
+
+  section('Recommendations');
+  if (report.recommendations.length === 0) console.log('  nothing outstanding');
+  for (const item of report.recommendations) console.log(`  - ${item}`);
+  console.log('');
+  console.log('No project command was executed. Availability is a filesystem lookup, not a run.');
+}
+
+async function doctor(argument: string | undefined): Promise<void> {
+  const file = resolve(argument ?? '.ax/project.yaml');
+  const report = await inspectProject({
+    file,
+    root: resolve(dirname(file), '..'),
+    actor: CLI_ACTOR,
+  });
+  render(report);
+  if (report.configuration.status === 'fail') process.exitCode = 1;
+}
+
 function showPolicy(): void {
   console.log('Capability matrix declared in harness/policies/default/policy.json.');
   console.log(`Only ${EXECUTION_CAPABILITY} is enforced, and only where an agent actor asks the`);
@@ -219,6 +312,8 @@ if (command === 'validate' && args.length <= 1 && !args[0]?.startsWith('-')) {
 } else if (command === 'quality' && args.filter(arg => !arg.startsWith('-')).length <= 1
   && args.every(arg => arg === '--execute' || !arg.startsWith('-'))) {
   await quality(args);
+} else if (command === 'doctor' && args.length <= 1 && !args[0]?.startsWith('-')) {
+  await doctor(args[0]);
 } else if (command === 'policy' && args.length === 0) {
   showPolicy();
 } else {

@@ -7,6 +7,14 @@ Implemented:
 - `profiles/resolve.ts` merges profile defaults into a declaration and revalidates it.
 - `buildsystem/detect.ts` detects one build system at a selected root and chooses
   the platform runner form. It reads file names only and executes nothing.
+- `doctor/inspect.ts` reports whether a project is ready to use the harness: what is
+  declared, what exists on disk, and what could be started if asked. It runs no
+  project command — the only filesystem work is the same executable lookup the runner
+  does before spawning, so it is safe against a repository nobody has read. It
+  returns a report rather than throwing, because a project that is *not* ready is the
+  case it exists for. It produces no readiness score: a percentage would put a number
+  on a judgement nobody made, and invite the number to be improved rather than the
+  project.
 - `permissions/policy.ts` holds the capability vocabulary.
 - `permissions/decide.ts` answers what the definitions say about a role, as a plain
   boolean, and builds the capability matrix the console renders.
