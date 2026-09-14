@@ -2,6 +2,7 @@ import { loadProject } from '../../config/load.js';
 import { checkContextFiles } from '../context/resolve.js';
 import { resolveProject } from '../profiles/resolve.js';
 import { evalIds } from '../evals/registry.js';
+import { detectCapabilities } from './capability.js';
 import { parseCommand } from '../execution/command-parser.js';
 import { resolveExecutable } from '../execution/executable.js';
 import { authorize } from '../permissions/authorize.js';
@@ -18,10 +19,12 @@ import type { ProjectConfig } from '../../config/project.generated.js';
  * which would put a number on a judgement nobody made and invite the number to be
  * improved rather than the project.
  *
- * Nothing here executes a project command. The only filesystem work is looking up
- * whether a declared program exists, which is the same `stat` the runner does before
- * spawning and starts no process. That distinction matters: `ax doctor` must be safe
- * to run against a repository you have not read.
+ * Nothing here executes a project command. It looks up whether a declared program
+ * exists — the same `stat` the runner does before spawning, which starts no process —
+ * and reads manifests under a byte ceiling to see what the project appears able to
+ * run. Reading a manifest is not interpreting one: no build file is evaluated. That
+ * distinction matters, because `ax doctor` must be safe to run against a repository
+ * you have not read.
  */
 
 /** A declared context document, and whether the reference resolves. */
@@ -58,6 +61,11 @@ export interface QualityFinding {
   command?: string;
   /** Whether the command came from the declaration or the profile. */
   source?: string;
+  /**
+   * Evidence that the project can run this gate although the declaration switched it
+   * off. Present only on a disabled gate, and only when something was observed.
+   */
+  unclaimed?: string;
 }
 
 export interface ToolFinding {
@@ -161,6 +169,15 @@ export async function inspectProject(options: DoctorOptions): Promise<DoctorRepo
 
   const resolved = resolution.resolved;
   const context = await contextFindings(config, options.root);
+
+  /*
+   * What the project looks able to run, regardless of what it declared. A gate that
+   * is switched off in a project that plainly can run it is a declaration
+   * under-reporting its own project, and saying nothing about it would be a clean
+   * report that describes less than the truth.
+   */
+  const capabilities = await detectCapabilities(options.root, resolved.buildSystem);
+  const byStage = new Map(capabilities.map(entry => [entry.stage, entry.evidence]));
   const quality: QualityFinding[] = [];
 
   for (const entry of planQuality(resolved)) {
@@ -169,8 +186,11 @@ export async function inspectProject(options: DoctorOptions): Promise<DoctorRepo
       title: entry.stage.title,
       availability: 'disabled',
     };
-    if (entry.readiness === 'not-applicable') finding.availability = 'disabled';
-    else if (entry.readiness === 'manual') finding.availability = 'manual';
+    if (entry.readiness === 'not-applicable') {
+      finding.availability = 'disabled';
+      const evidence = byStage.get(entry.stage.id);
+      if (evidence) finding.unclaimed = evidence;
+    } else if (entry.readiness === 'manual') finding.availability = 'manual';
     else if (entry.readiness === 'unavailable') finding.availability = 'not-configured';
     else if (entry.command !== undefined) {
       finding.command = entry.command;
@@ -265,6 +285,15 @@ function recommend(report: DoctorReport, context: ContextFinding[]): string[] {
   }
   for (const entry of report.quality.filter(item => item.availability === 'not-installed')) {
     recommendations.push(`Install the tool for ${entry.title}, or run elsewhere; its program was not found here.`);
+  }
+  /*
+   * The finding this diagnostic exists to avoid getting wrong. A project that can run
+   * a gate it switched off is not in good shape, and must not be told it is.
+   */
+  for (const entry of report.quality.filter(item => item.unclaimed !== undefined)) {
+    recommendations.push(
+      `Enable ${entry.title}: it is switched off, but ${entry.unclaimed}. Declare its command to run it.`,
+    );
   }
   if (report.evals === 0) recommendations.push('Add a first agent eval; none is defined.');
   if (report.execution && report.execution.authorization !== 'allowed') {

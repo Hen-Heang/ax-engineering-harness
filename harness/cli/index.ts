@@ -260,6 +260,8 @@ function render(report: DoctorReport): void {
   for (const entry of report.quality) {
     const suffix = entry.command ? `  ${entry.command}${entry.source ? ` [${entry.source}]` : ''}` : '';
     row(entry.title, `${LABELS[entry.availability] ?? entry.availability}${suffix}`);
+    // A gate switched off in a project that can run it is the thing most worth saying.
+    if (entry.unclaimed) console.log(`  ${''.padEnd(22)}^ but ${entry.unclaimed}`);
   }
 
   section('Tools');
@@ -280,7 +282,8 @@ function render(report: DoctorReport): void {
   if (report.recommendations.length === 0) console.log('  nothing outstanding');
   for (const item of report.recommendations) console.log(`  - ${item}`);
   console.log('');
-  console.log('No project command was executed. Availability is a filesystem lookup, not a run.');
+  console.log('No project command was executed. Availability is a filesystem lookup, not a run,');
+  console.log('and a manifest was read but never interpreted.');
 }
 
 async function doctor(argument: string | undefined): Promise<void> {

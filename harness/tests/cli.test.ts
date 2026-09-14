@@ -173,3 +173,53 @@ test('CLI init refuses to choose between build systems', t => {
   assert.match(result.stdout, /Choose one with --profile/);
   assert.deepEqual(readdirSync(projectRoot).sort(), ['package.json', 'pom.xml']);
 });
+
+test('CLI doctor refuses a clean bill of health for a project that can do more', t => {
+  const projectRoot = mkdtempSync(join(tmpdir(), 'ax-unclaimed-'));
+  t.after(() => rmSync(projectRoot, { recursive: true, force: true }));
+  mkdirSync(join(projectRoot, '.ax'));
+  writeFileSync(
+    join(projectRoot, 'package.json'),
+    JSON.stringify({ name: 'f', private: true, scripts: { build: 'tsc', test: 'vitest run' } }),
+  );
+  writeFileSync(join(projectRoot, '.ax', 'project.yaml'), `schemaVersion: 1
+project:
+  name: unclaimed-fixture
+  mode: single-repo
+  profile: harness-tooling
+context: {}
+commands:
+  build: node --version
+tools:
+  codebase: { enabled: true }
+  docs: { enabled: true }
+  github: { enabled: false }
+  database: { enabled: false, mode: metadata-only }
+permissions:
+  direct_main_push: false
+  force_push: false
+  production_deploy: false
+  database_write: false
+  secrets_access: false
+quality:
+  build: true
+  lint: false
+  typecheck: false
+  tests: false
+  integration_tests: false
+  security: false
+  review: true
+  eval: false
+  human_approval: true
+limits:
+  max_retries: 2
+  max_duration_seconds: 60
+`);
+
+  const result = run('doctor', join(projectRoot, '.ax', 'project.yaml'));
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Unit tests\s+DISABLED/);
+  assert.match(result.stdout, /\^ but package\.json declares a "test" script/);
+  assert.match(result.stdout, /Enable Unit tests/);
+  assert.doesNotMatch(result.stdout, /nothing outstanding/, 'this project is not in good shape');
+});

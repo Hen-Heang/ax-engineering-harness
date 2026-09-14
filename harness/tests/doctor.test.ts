@@ -265,3 +265,51 @@ test('recommendations only ever name something the report observed', async t => 
   assert.deepEqual(report.recommendations, []);
   assert.equal(report.evals > 0, true, 'this repository ships an eval definition');
 });
+
+test('a gate switched off in a project that can run it is flagged, not passed over', async t => {
+  /*
+   * The failure this check exists for. A declaration that disables tests in a project
+   * with a test script under-reports its own project, and "nothing outstanding" over
+   * that is the same error as calling an unrun gate a pass, one level up.
+   */
+  const { file, root } = await fixture(t, { commands: { build: 'node --version' }, quality: { build: true, tests: false } });
+  await writeFile(
+    join(root, 'package.json'),
+    JSON.stringify({ name: 'fixture', private: true, scripts: { test: 'vitest run', lint: 'eslint .' } }),
+  );
+  const report = await inspectProject({ file, root, actor: HUMAN });
+
+  const tests = gate(report, 'unit_tests');
+  assert.equal(tests?.availability, 'disabled');
+  assert.equal(tests?.unclaimed, 'package.json declares a "test" script');
+  assert.ok(report.recommendations.some(item => /Enable Unit tests/.test(item)));
+  assert.ok(report.recommendations.some(item => /Enable Lint/.test(item)));
+  assert.notDeepEqual(report.recommendations, [], 'this project is not in good shape');
+});
+
+test('a gate switched off in a project that cannot run it stays quiet', async t => {
+  // Nagging about a linter nobody wants would make the diagnostic worth ignoring.
+  const { file, root } = await fixture(t, { commands: { build: 'node --version' }, quality: { build: true } });
+  await writeFile(
+    join(root, 'package.json'),
+    JSON.stringify({ name: 'fixture', private: true, scripts: { build: 'tsc' } }),
+  );
+  const report = await inspectProject({ file, root, actor: HUMAN });
+
+  assert.equal(gate(report, 'lint')?.availability, 'disabled');
+  assert.equal(gate(report, 'lint')?.unclaimed, undefined);
+  assert.equal(
+    report.recommendations.some(item => /Enable /.test(item)),
+    false,
+    'no gate should be suggested without evidence for it',
+  );
+});
+
+test('a malformed or absent manifest yields no evidence rather than an error', async t => {
+  const { file, root } = await fixture(t, { commands: { build: 'node --version' }, quality: { build: true } });
+  await writeFile(join(root, 'package.json'), '{ this is not json');
+  const report = await inspectProject({ file, root, actor: HUMAN });
+
+  assert.equal(report.configuration.status, 'pass', 'an unreadable manifest must not fail the report');
+  assert.ok(report.quality.every(entry => entry.unclaimed === undefined));
+});

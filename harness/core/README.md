@@ -7,10 +7,18 @@ Implemented:
 - `profiles/resolve.ts` merges profile defaults into a declaration and revalidates it.
 - `buildsystem/detect.ts` detects one build system at a selected root and chooses
   the platform runner form. It reads file names only and executes nothing.
+- `doctor/capability.ts` notices what a project appears able to run but has not
+  declared, from manifests and directory names under a byte ceiling. A gate switched
+  off is ordinarily fine; a gate switched off in a project that plainly can run it is
+  a declaration under-reporting its own project, and a clean report over that is the
+  same error as calling an unrun gate a pass, one level up. Everything it produces is
+  evidence phrased for a person to check, never a verdict: a `test` script exists,
+  and whether it passes is a question only running it could answer.
 - `doctor/inspect.ts` reports whether a project is ready to use the harness: what is
   declared, what exists on disk, and what could be started if asked. It runs no
-  project command — the only filesystem work is the same executable lookup the runner
-  does before spawning, so it is safe against a repository nobody has read. It
+  project command — it does the same executable lookup the runner does before
+  spawning, and reads manifests without interpreting them, so it is safe against a
+  repository nobody has read. It
   returns a report rather than throwing, because a project that is *not* ready is the
   case it exists for. It produces no readiness score: a percentage would put a number
   on a judgement nobody made, and invite the number to be improved rather than the
