@@ -40,8 +40,8 @@ test('planning proposes files without creating any of them', async t => {
   assert.equal(plan.name, 'demo-service');
   assert.deepEqual(
     plan.files.map(file => file.path),
-    ['.ax/project.yaml', '.ax/context/architecture.md', '.ax/context/domain.md',
-      '.ax/context/database.md', 'AGENTS.md'],
+    ['.ax/project.yaml', '.ax/.gitignore', '.ax/context/architecture.md',
+      '.ax/context/domain.md', '.ax/context/database.md', 'AGENTS.md'],
   );
   assert.ok(plan.files.every(file => file.status === 'create'));
 
@@ -228,4 +228,23 @@ test('a script name a shell would read is refused rather than declared', async t
   const declaration = plan.files.find(file => file.path === '.ax/project.yaml')?.contents ?? '';
   assert.doesNotMatch(declaration, /rm -rf/);
   assert.match(declaration, /^ {2}lint: false$/m);
+});
+
+test('adoption keeps recorded runs out of the project history', async t => {
+  /*
+   * Executing gates writes a run record under .ax/runs/. That is local evidence about
+   * one machine at one moment, and committing it would put a claim about a run into a
+   * history that cannot verify it. The rule lives inside .ax rather than being
+   * appended to the project's own .gitignore, because init must never modify a file
+   * the project already owns.
+   */
+  const root = await project(t, { 'pom.xml': POM });
+  const plan = await planInit({ root });
+
+  const ignore = plan.files.find(file => file.path === '.ax/.gitignore');
+  assert.equal(ignore?.status, 'create');
+  assert.match(ignore?.contents ?? '', /^runs\/$/m);
+
+  await applyInit(plan);
+  assert.match(await readFile(join(root, '.ax', '.gitignore'), 'utf8'), /^runs\/$/m);
 });

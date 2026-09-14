@@ -361,6 +361,17 @@ export async function planInit(options: InitOptions): Promise<InitPlan> {
       contents: declaration(name, profile.id, gates, contextKeys, detected),
       note: `${gates.size} gate(s) enabled; ${fromProject} command(s) read from this project`,
     },
+    {
+      /*
+       * Executing gates writes a run record under .ax/runs/, which is local evidence
+       * about one machine at one moment and does not belong in anyone's history. The
+       * rule is kept inside .ax rather than appended to the project's own .gitignore,
+       * because init must never modify a file the project already owns.
+       */
+      path: '.ax/.gitignore',
+      contents: '# Run records are local evidence, not repository content.\nruns/\n',
+      note: 'keeps recorded runs out of the project history',
+    },
     ...contextKeys.map(key => ({
       path: `.ax/context/${key}.md`,
       contents: contextTemplate(key, name),
