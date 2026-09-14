@@ -125,3 +125,86 @@ export async function detectCapabilities(
   if (buildSystem === 'gradle') return gradleEvidence(root);
   return [];
 }
+
+/**
+ * Commands a project's own manifest says it can run.
+ *
+ * Evidence tells a person a gate is worth enabling; this turns the same observation
+ * into something the harness can actually run, so a generated declaration describes
+ * the project rather than only the profile. A command is produced only where one can
+ * be constructed with confidence — where it cannot, the gate is left alone and the
+ * doctor reports the evidence instead. Guessing a task name would declare a gate that
+ * fails the first time it runs, which is worse than not declaring it.
+ */
+export type CommandSlot =
+  'build' | 'lint' | 'typecheck' | 'test' | 'integration_test' | 'security';
+
+/** Script names may become command tokens, so anything a shell would read is refused. */
+const SAFE_SCRIPT = /^[A-Za-z0-9_:.-]+$/;
+
+const NODE_SLOTS: { slot: CommandSlot; names: string[] }[] = [
+  { slot: 'build', names: ['build'] },
+  { slot: 'lint', names: ['lint'] },
+  { slot: 'typecheck', names: ['typecheck', 'type-check'] },
+  { slot: 'test', names: ['test'] },
+  { slot: 'integration_test', names: ['e2e', 'test:e2e', 'integration', 'test:integration'] },
+];
+
+async function nodeScripts(root: string): Promise<Record<string, unknown>> {
+  const source = await readManifest(join(root, 'package.json'));
+  if (source === null) return {};
+  try {
+    const parsed: unknown = JSON.parse(source);
+    if (parsed && typeof parsed === 'object' && 'scripts' in parsed) {
+      const found = (parsed as { scripts?: unknown }).scripts;
+      if (found && typeof found === 'object') return found as Record<string, unknown>;
+    }
+  } catch {
+    return {};
+  }
+  return {};
+}
+
+export interface DetectCommandsOptions {
+  root: string;
+  buildSystem: BuildSystemId | undefined;
+  /** Platform-correct runner, e.g. `mvnw.cmd` or `./mvnw`. Required for Maven. */
+  runner?: string;
+}
+
+export async function detectCommands(
+  options: DetectCommandsOptions,
+): Promise<Partial<Record<CommandSlot, string>>> {
+  const commands: Partial<Record<CommandSlot, string>> = {};
+
+  if (options.buildSystem === 'node') {
+    const scripts = await nodeScripts(options.root);
+    for (const entry of NODE_SLOTS) {
+      const name = entry.names.find(
+        candidate => typeof scripts[candidate] === 'string' && SAFE_SCRIPT.test(candidate),
+      );
+      if (!name) continue;
+      // `npm test` is the built-in spelling; everything else goes through `run`.
+      commands[entry.slot] = name === 'test' ? 'npm test' : `npm run ${name}`;
+    }
+    return commands;
+  }
+
+  if (options.buildSystem === 'maven' && options.runner) {
+    const pom = await readManifest(join(options.root, 'pom.xml'));
+    if (pom?.includes('maven-failsafe-plugin')) {
+      /*
+       * `verify` is the lifecycle phase failsafe binds to, and is what a Maven
+       * project's CI runs for integration tests. It re-runs unit tests on the way
+       * through, which is a real cost but the correct meaning; naming a narrower
+       * goal would need `package` to have happened first and would break when run
+       * alone.
+       */
+      commands.integration_test = `${options.runner} -B --no-transfer-progress verify`;
+    }
+  }
+
+  // Gradle deliberately produces nothing: `integrationTest` is a convention, not a
+  // guarantee, and reading it out of a build script would mean interpreting one.
+  return commands;
+}

@@ -88,8 +88,10 @@ npm run ax -- init /path/to/your-project
 npm run ax -- init --write /path/to/your-project
 ```
 
-It enables only the gates the chosen profile supplies a command for, so the generated
-declaration validates immediately. Existing files are never replaced: an `AGENTS.md`
+It enables a gate where either the chosen profile or the project's own manifest
+supplies a command for it, so the generated declaration describes the project and
+validates immediately. A command read from the project — an npm script, a Maven
+wrapper goal — is declared explicitly and wins over the profile default. Existing files are never replaced: an `AGENTS.md`
 already present is left exactly as it is and a template is written beside it for you
 to merge by hand. Where two build systems are present, it refuses to choose and asks
 for `--profile`.

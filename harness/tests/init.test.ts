@@ -69,8 +69,9 @@ test('what init generates validates, resolves, and passes the doctor', async t =
   assert.equal(report.buildSystem?.wrapper, true);
   // Every declared context reference resolves, because init wrote the files too.
   assert.deepEqual(report.context.map(entry => entry.status), ['present', 'present', 'present']);
-  // Only the gates java-spring supplies a command for are enabled, so none is
-  // enabled without something to run.
+  // A gate is enabled only where the profile or the project supplies a command, so
+  // none is ever enabled without something to run. This pom declares nothing, so
+  // only the profile's gates are on.
   assert.equal(report.quality.find(gate => gate.stage === 'build')?.availability, 'available');
   assert.equal(report.quality.find(gate => gate.stage === 'lint')?.availability, 'disabled');
 });
@@ -156,4 +157,75 @@ test('a directory name that cannot be a project name asks for one', async t => {
   const named = await planInit({ root, name: 'chosen-name' });
   assert.deepEqual(named.blockers, []);
   assert.ok(named.files.some(file => file.contents.includes('name: chosen-name')));
+});
+
+test('generated commands come from the project manifest, not only the profile', async t => {
+  /*
+   * The regression this exists for. A declaration built from the profile alone
+   * switched off tests in a repository with a test script, and the doctor then had
+   * to report an omission the generator had just created.
+   */
+  const root = await project(t, {
+    'package.json': JSON.stringify({
+      name: 'ui', private: true,
+      scripts: { build: 'next build', test: 'vitest run', lint: 'eslint .', 'test:e2e': 'playwright test' },
+    }),
+  });
+  const plan = await planInit({ root });
+  const declaration = plan.files.find(file => file.path === '.ax/project.yaml')?.contents ?? '';
+
+  assert.match(declaration, /^ {2}build: npm run build$/m);
+  assert.match(declaration, /^ {2}test: npm test$/m, 'npm test is the built-in spelling');
+  assert.match(declaration, /^ {2}lint: npm run lint$/m);
+  assert.match(declaration, /^ {2}integration_test: npm run test:e2e$/m);
+  // Every detected command switches its gate on, or declaring it would be pointless.
+  assert.match(declaration, /^ {2}tests: true$/m);
+  assert.match(declaration, /^ {2}lint: true$/m);
+  assert.match(declaration, /^ {2}integration_tests: true$/m);
+});
+
+test('a Maven project with failsafe gets an integration command using its own wrapper', async t => {
+  const wrapper = process.platform === 'win32' ? 'mvnw.cmd' : 'mvnw';
+  const root = await project(t, {
+    'pom.xml': `<project><build><plugins><plugin>
+      <artifactId>maven-failsafe-plugin</artifactId></plugin></plugins></build></project>\n`,
+    [wrapper]: '@echo off\n',
+  });
+  const plan = await planInit({ root });
+  const declaration = plan.files.find(file => file.path === '.ax/project.yaml')?.contents ?? '';
+
+  assert.match(declaration, /^ {2}integration_test: .*verify$/m);
+  // The wrapper this checkout actually has, in this platform's form — not a bare
+  // `mvn` that may not be on PATH.
+  const expected = process.platform === 'win32' ? 'mvnw.cmd' : './mvnw';
+  assert.ok(
+    declaration.includes(`integration_test: ${expected} `),
+    `expected the ${expected} wrapper form in:
+${declaration}`,
+  );
+  assert.match(declaration, /^ {2}integration_tests: true$/m);
+});
+
+test('a project whose manifest declares nothing keeps the profile defaults alone', async t => {
+  const root = await project(t, {
+    'pom.xml': '<project><modelVersion>4.0.0</modelVersion></project>\n',
+  });
+  const plan = await planInit({ root });
+  const declaration = plan.files.find(file => file.path === '.ax/project.yaml')?.contents ?? '';
+
+  assert.match(declaration, /^commands:\n {2}\{\}$/m, 'nothing is invented');
+  assert.match(declaration, /^ {2}integration_tests: false$/m);
+  assert.match(declaration, /^ {2}build: true$/m, 'the profile still supplies build');
+});
+
+test('a script name a shell would read is refused rather than declared', async t => {
+  const root = await project(t, {
+    'package.json': JSON.stringify({
+      name: 'x', private: true, scripts: { build: 'tsc', 'lint && rm -rf /': 'evil' },
+    }),
+  });
+  const plan = await planInit({ root });
+  const declaration = plan.files.find(file => file.path === '.ax/project.yaml')?.contents ?? '';
+  assert.doesNotMatch(declaration, /rm -rf/);
+  assert.match(declaration, /^ {2}lint: false$/m);
 });

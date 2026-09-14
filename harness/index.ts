@@ -56,8 +56,8 @@ export { detectStack, planInit, toProjectName } from './core/init/plan.js';
 export type { Detection, InitOptions, InitPlan, PlannedFile, PlannedFileStatus } from './core/init/plan.js';
 export { applyInit } from './core/init/apply.js';
 export type { ApplyResult, WriteOutcome, WriteResult } from './core/init/apply.js';
-export { detectCapabilities, MAX_MANIFEST_BYTES } from './core/doctor/capability.js';
-export type { CapabilityEvidence } from './core/doctor/capability.js';
+export { detectCapabilities, MAX_MANIFEST_BYTES } from './core/capability/detect.js';
+export type { CapabilityEvidence } from './core/capability/detect.js';
 export { inspectProject } from './core/doctor/inspect.js';
 export type {
   CommandAvailability, ContextFinding, DoctorOptions, DoctorReport, QualityFinding, ToolFinding,

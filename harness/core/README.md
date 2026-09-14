@@ -23,12 +23,15 @@ Implemented:
   case it exists for. It produces no readiness score: a percentage would put a number
   on a judgement nobody made, and invite the number to be improved rather than the
   project.
-- `init/plan.ts` proposes an adoption for a project: it reads manifest *names* at one
-  root, recommends a profile, and derives a declaration from what that profile can
-  actually supply, so a generated file validates and resolves on the first try. It
-  opens no build file and never scans recursively. Where detection is ambiguous — two
-  build systems, or two profiles serving one — it refuses and asks, rather than
-  picking one.
+- `init/plan.ts` proposes an adoption for a project: it detects the build system,
+  recommends a profile, and derives a declaration from two sources — what the profile
+  can supply and what the project's own manifest says it can run — so the generated
+  file describes the project rather than only the profile, and validates on the first
+  try. A command read from the project is declared explicitly and wins over the
+  profile default. Where detection is ambiguous — two build systems, or two profiles
+  serving one — it refuses and asks rather than picking one, and where a command
+  cannot be constructed with confidence it declares nothing and lets the doctor
+  report the evidence instead.
 - `init/apply.ts` writes a plan that was already shown. Every file is opened `wx`, so
   refusing to overwrite is a property of the system call rather than of a check made
   earlier: a file that appears between planning and writing is still safe. An existing

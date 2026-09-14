@@ -2,7 +2,7 @@ import { loadProject } from '../../config/load.js';
 import { checkContextFiles } from '../context/resolve.js';
 import { resolveProject } from '../profiles/resolve.js';
 import { evalIds } from '../evals/registry.js';
-import { detectCapabilities } from './capability.js';
+import { detectCapabilities } from '../capability/detect.js';
 import { parseCommand } from '../execution/command-parser.js';
 import { resolveExecutable } from '../execution/executable.js';
 import { authorize } from '../permissions/authorize.js';
