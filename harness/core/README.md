@@ -30,10 +30,22 @@ Implemented:
   parts another session needs. It checks structure, never truth.
 - `execution/command-parser.ts` accepts only whitespace-separated program and
   argument tokens. Shell operators, redirects, substitutions, quotes, escapes,
-  globbing, and control characters are unsupported in v1.
+  globbing, and control characters are unsupported in v1, as are cmd.exe's `%` and
+  `^`, so that no token means anything to a command interpreter on any platform.
 - `execution/command-runner.ts` is the vendor-neutral process boundary. It uses
   `spawn` with `shell: false`, captures stdout and stderr separately under one byte
   limit, applies a timeout, and distinguishes command failure from execution failure.
+
+  One exception is deliberate and recorded. `npm`, `gradlew` and `mvnw` are `.cmd`
+  or `.bat` files on Windows, and since Node 18.20 `spawn` refuses to start one
+  directly (CVE-2024-27980): a batch file can only run under cmd.exe. Those are
+  started as `cmd.exe /d /s /c` with an argument vector this module builds, which is
+  not `shell: true` — that would hand cmd.exe the declared command *string* to
+  re-parse. The argv is already fixed by the parser and contains nothing cmd.exe
+  interprets; only the resolved path is quoted, and a path containing `"`, `%` or
+  `^` is refused rather than reasoned about. Every result carries `launcher`, which
+  is `direct` or `cmd.exe`, and it is persisted in the run record, so a run never
+  hides that an interpreter was involved.
 - `execution/executable.ts` finds the real file a program name refers to, rather
   than delegating that lookup to a shell. On Windows it follows the PATHEXT rule
   cmd.exe uses, so `npm` resolves to `npm.cmd` and never to the extensionless POSIX

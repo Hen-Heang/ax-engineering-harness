@@ -59,8 +59,8 @@ export type { ArchitectureEdge, ArchitectureNode } from './core/architecture/reg
 export type { ArchitectureDefinition } from './config/architecture.generated.js';
 export { resolveExecutable, toArgv } from './core/execution/executable.js';
 export type { ArgvResult, ArgvRefusal } from './core/execution/executable.js';
-export { DEFAULT_MAX_OUTPUT_BYTES, parseCommand, runCommand } from './core/execution/index.js';
+export { buildBatchCommandLine, DEFAULT_MAX_OUTPUT_BYTES, parseCommand, runCommand } from './core/execution/index.js';
 export type {
-  CommandExecutionResult, CommandExecutionStatus, CommandParseResult, CommandRunnerOptions,
-  ParsedCommand, UnsupportedCommandReason,
+  CommandExecutionResult, CommandExecutionStatus, CommandLauncher, CommandParseResult,
+  CommandRunnerOptions, ParsedCommand, UnsupportedCommandReason,
 } from './core/execution/index.js';

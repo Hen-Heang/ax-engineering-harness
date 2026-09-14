@@ -53,9 +53,36 @@ Order is cheapest first, so an expensive stage is only reached once the earlier
 ones have passed. Review and human approval cannot be disabled by a v1 declaration.
 
 Execution is fail-fast after `failed`, `timed-out`, or `execution-error`. Remaining
-executable gates are `unrun`. An unsupported v1 command is `unavailable`; the runner
-never switches to a shell. Manual and unavailable gates make the final result
+executable gates are `unrun`. Manual and unavailable gates make the final result
 `INCOMPLETE`, while an executed failure makes it `FAIL`.
+
+Three separate things make a gate `unavailable` rather than failed, because none of
+them tells you anything about the code under test:
+
+| Reason | Meaning |
+| --- | --- |
+| `no-command` | The gate is enabled but neither project nor profile supplies a command. |
+| `unsupported-command` | The command needs shell syntax. The runner never switches to a shell. |
+| `executable-not-found` | The tool is not installed on this machine. |
+
+Execution is also the one point where a declared capability is enforced rather than
+described. The executor takes an explicit actor: a person running the CLI in their
+own checkout (`human-cli`), or an agent acting under a role, which must hold
+`run_tests`. An unrecognised role is denied rather than defaulted, and a denied run
+is `INCOMPLETE` — never a pass.
+
+### Windows batch launchers
+
+`npm`, `gradlew` and `mvnw` are `.cmd` or `.bat` files on Windows, which Node refuses
+to start outside a shell (CVE-2024-27980). Those are launched as
+`cmd.exe /d /s /c` with an argument vector the runner builds. This is not
+`shell: true`: the declared command string is never handed to cmd.exe to re-parse,
+the argv is fixed by the parser before this point, and the parser refuses `%` and `^`
+as well as every POSIX shell character, so no token means anything to cmd.exe. A
+resolved path containing `"`, `%` or `^` is refused outright.
+
+Every execution result carries `launcher`, either `direct` or `cmd.exe`, and it is
+persisted in the run record. A run never hides that an interpreter was involved.
 
 A profile may supply the command for a stage; the project may override it. The plan
 records which, so it is always visible whether a command was declared or inherited.

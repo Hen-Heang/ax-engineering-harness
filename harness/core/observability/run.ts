@@ -108,6 +108,7 @@ export function buildRunRecord(inputs: RunRecordInputs): RunValidation {
           status: gate.execution.status,
           timedOut: gate.execution.timedOut,
           outputTruncated: gate.execution.outputTruncated,
+          launcher: gate.execution.launcher,
           ...(gate.execution.unsupportedReason === undefined ? {} : {
             unsupportedReason: gate.execution.unsupportedReason,
           }),

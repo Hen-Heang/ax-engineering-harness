@@ -266,6 +266,10 @@ export interface Execution {
   status: "passed" | "failed" | "timed-out" | "unsupported" | "execution-error";
   timedOut: boolean;
   outputTruncated: boolean;
+  /**
+   * How the process was started. cmd.exe records that a Windows batch launcher was reached through a harness-built argument vector, never through a shell re-parsing the declared command.
+   */
+  launcher: "direct" | "cmd.exe";
   unsupportedReason?: "empty" | "shell-syntax";
   errorCode?: string;
 }

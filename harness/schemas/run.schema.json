@@ -98,7 +98,7 @@
     "execution": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["program", "args", "startedAt", "finishedAt", "durationMs", "exitCode", "status", "timedOut", "outputTruncated"],
+      "required": ["program", "args", "startedAt", "finishedAt", "durationMs", "exitCode", "status", "timedOut", "outputTruncated", "launcher"],
       "properties": {
         "program": { "type": ["string", "null"], "maxLength": 512 },
         "args": { "type": "array", "maxItems": 128, "items": { "type": "string", "maxLength": 2048 } },
@@ -109,6 +109,7 @@
         "status": { "enum": ["passed", "failed", "timed-out", "unsupported", "execution-error"] },
         "timedOut": { "type": "boolean" },
         "outputTruncated": { "type": "boolean" },
+        "launcher": { "enum": ["direct", "cmd.exe"], "description": "How the process was started. cmd.exe records that a Windows batch launcher was reached through a harness-built argument vector, never through a shell re-parsing the declared command." },
         "unsupportedReason": { "enum": ["empty", "shell-syntax"] },
         "errorCode": { "type": "string", "minLength": 1, "maxLength": 64 }
       }

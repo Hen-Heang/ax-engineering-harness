@@ -27,6 +27,7 @@ function execution(command: string, status: CommandExecutionResult['status']): C
     status,
     timedOut: status === 'timed-out',
     outputTruncated: false,
+    launcher: 'direct',
     ...(status === 'unsupported' ? { unsupportedReason: 'shell-syntax' as const } : {}),
   };
 }

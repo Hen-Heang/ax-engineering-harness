@@ -9,6 +9,35 @@ function timestamp(milliseconds: number): string {
   return new Date(milliseconds).toISOString();
 }
 
+/**
+ * Starting a Windows batch launcher without becoming a shell.
+ *
+ * `npm`, `gradlew` and `mvnw` are all `.cmd` or `.bat` files on Windows, and since
+ * Node 18.20 `spawn` refuses to start one directly (CVE-2024-27980): a batch file
+ * can only run under cmd.exe, and cmd.exe's quoting rules make a naively built
+ * command line an injection surface.
+ *
+ * `shell: true` is still refused, because it would hand cmd.exe the declared command
+ * *string* and let it re-parse the whole thing. Instead the argument vector is
+ * already fixed by the parser before this point, and it is guaranteed to contain no
+ * whitespace, quotes, operators, substitutions, or cmd.exe's `%` and `^`. Only the
+ * resolved file path — which the parser never saw and which may legitimately contain
+ * spaces — needs quoting.
+ *
+ * The doubled outer quotes are required: with `/s`, cmd.exe strips the first and
+ * last character when both are quotes and takes the rest verbatim. Without the outer
+ * pair, a command with no arguments would have its path quotes stripped instead and
+ * would break on the first space.
+ */
+export function buildBatchCommandLine(file: string, args: readonly string[]): string {
+  return `""${file}"${args.map(argument => ` ${argument}`).join('')}"`;
+}
+
+const WINDOWS_BATCH = /\.(cmd|bat)$/i;
+
+/** Path characters cmd.exe would still interpret, however the arguments are built. */
+const UNSAFE_IN_PATH = /["%^]/;
+
 function appendBounded(
   current: Buffer<ArrayBufferLike>,
   chunk: Buffer<ArrayBufferLike>,
@@ -41,7 +70,7 @@ export async function runCommand(
   const blank = (program: string | null, args: string[]) => ({
     command, program, args, startedAt: timestamp(started), finishedAt: timestamp(Date.now()),
     durationMs: Date.now() - started, exitCode: null, stdout: '', stderr: '',
-    timedOut: false, outputTruncated: false,
+    timedOut: false, outputTruncated: false, launcher: 'direct' as CommandExecutionResult['launcher'],
   });
 
   const parsed = parseCommand(command);
@@ -67,6 +96,16 @@ export async function runCommand(
     return { ...blank(program, args), status: 'execution-error', errorCode: 'ENOENT' };
   }
 
+  const platform = options.platform ?? process.platform;
+  const batch = platform === 'win32' && WINDOWS_BATCH.test(file);
+  if (batch && UNSAFE_IN_PATH.test(file)) {
+    // Refuse rather than reason about how cmd.exe would read this path.
+    return { ...blank(program, args), status: 'execution-error', errorCode: 'EUNSAFEPATH', launcher: 'cmd.exe' };
+  }
+  const launcher: CommandExecutionResult['launcher'] = batch ? 'cmd.exe' : 'direct';
+  const spawnFile = batch ? (env.COMSPEC ?? 'cmd.exe') : file;
+  const spawnArgs = batch ? ['/d', '/s', '/c', buildBatchCommandLine(file, args)] : args;
+
   return new Promise(resolve => {
     let stdout: Buffer<ArrayBufferLike> = Buffer.alloc(0);
     let stderr: Buffer<ArrayBufferLike> = Buffer.alloc(0);
@@ -77,11 +116,15 @@ export async function runCommand(
 
     let child;
     try {
-      child = spawn(file, args, {
+      child = spawn(spawnFile, spawnArgs, {
         cwd: options.cwd,
         env,
+        // Never true. A batch file is reached through an argv this module built,
+        // not by handing cmd.exe the declared command string to re-parse.
         shell: false,
         windowsHide: true,
+        // The batch command line is quoted above; Node must not re-quote it.
+        ...(batch ? { windowsVerbatimArguments: true } : {}),
       });
     } catch (error) {
       /*
@@ -94,7 +137,7 @@ export async function runCommand(
       const code = error instanceof Error && 'code' in error && typeof error.code === 'string'
         ? error.code
         : 'spawn-error';
-      resolve({ ...blank(program, args), status: 'execution-error', errorCode: code });
+      resolve({ ...blank(program, args), launcher, status: 'execution-error', errorCode: code });
       return;
     }
 
@@ -124,7 +167,7 @@ export async function runCommand(
          * home directory and therefore a username. Run records are publishable. */
         program, args, startedAt: timestamp(started), finishedAt: timestamp(finished),
         durationMs: finished - started, exitCode, stdout: stdout.toString('utf8'),
-        stderr: stderr.toString('utf8'), status, timedOut, outputTruncated,
+        stderr: stderr.toString('utf8'), status, timedOut, outputTruncated, launcher,
         ...(errorCode === undefined ? {} : { errorCode }),
       });
     };

@@ -22,7 +22,7 @@ const execution: QualityExecutionResult = {
         command: 'node build.js', program: 'node', args: ['build.js'],
         startedAt: '2026-09-14T01:00:00.000Z', finishedAt: '2026-09-14T01:00:00.100Z',
         durationMs: 100, exitCode: 0, stdout: 'private output', stderr: '', status: 'passed',
-        timedOut: false, outputTruncated: false,
+        timedOut: false, outputTruncated: false, launcher: 'direct',
       },
     },
     { stage: 'review', title: 'Review', outcome: 'unrun', command: null, reason: 'manual' },
