@@ -32,14 +32,21 @@ export {
   initialStatuses, pipeline, pipelinePassed, planQuality, summarize,
 } from './core/quality/plan.js';
 export type { GateOutcome, GatePlan, GateReadiness, GateStatus, Stage } from './core/quality/plan.js';
+export { executeQualityPlan } from './core/quality/execute.js';
+export type {
+  ExecuteQualityPlanOptions, QualityCommandRunner, QualityExecutionResult, QualityFinalStatus,
+  QualityGateOutcome, QualityGateReason, QualityGateResult,
+} from './core/quality/execute.js';
 export {
   canRetry, canTransition, checkTransition, getState, isFailurePath, workflow, workflowStateIds,
 } from './core/workflow/lifecycle.js';
 export type { TransitionCheck, WorkflowState } from './core/workflow/lifecycle.js';
 export { evalIds, getEval, scoreEval } from './core/evals/registry.js';
 export type { EvalScore } from './core/evals/registry.js';
-export { getRun, isMeasured, runIds, validateRunRecord } from './core/observability/run.js';
-export type { RunValidation } from './core/observability/run.js';
+export { buildRunRecord, createRunId, getRun, isMeasured, runIds, validateRunRecord } from './core/observability/run.js';
+export type { RunRecordInputs, RunValidation } from './core/observability/run.js';
+export { loadRunRecord, MAX_RUN_RECORD_BYTES, persistRunRecord } from './core/observability/storage.js';
+export type { LoadRunResult, PersistRunResult } from './core/observability/storage.js';
 export { checkHandoffDocument, requiredHandoffSections, validateHandoffRecord } from './core/handoff/check.js';
 export type { HandoffValidation } from './core/handoff/check.js';
 export type { PipelineDefinition } from './config/pipeline.generated.js';
@@ -54,5 +61,8 @@ export { executeGates, EXECUTION_CAPABILITY } from './core/execution/gates.js';
 export type { ExecuteOptions, ExecutionReport, GateExecution, GateRefusal } from './core/execution/gates.js';
 export { resolveExecutable, toArgv } from './core/execution/executable.js';
 export type { ArgvResult, ArgvRefusal } from './core/execution/executable.js';
-export { buildRunRecord } from './core/observability/run.js';
-export type { RunRecordInputs } from './core/observability/run.js';
+export { DEFAULT_MAX_OUTPUT_BYTES, parseCommand, runCommand } from './core/execution/index.js';
+export type {
+  CommandExecutionResult, CommandExecutionStatus, CommandParseResult, CommandRunnerOptions,
+  ParsedCommand, UnsupportedCommandReason,
+} from './core/execution/index.js';

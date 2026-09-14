@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
-  buildRunRecord, executeGates, parseProject, resolveExecutable, resolveProject, toArgv,
-  validateRunRecord, type ExecutionReport, type GateExecution, type ProjectConfig,
+  executeGates, parseProject, resolveExecutable, resolveProject, toArgv,
+  type ExecutionReport, type GateExecution, type ProjectConfig,
   type ResolvedProject,
 } from '../index.js';
 
@@ -190,55 +190,6 @@ test('gates needing a person are reported as unrun rather than attempted', async
   assert.equal(gate(report, 'lint'), undefined);
 });
 
-test('a recorded run is now valid, which the earlier refusal was waiting for', () => {
-  const example = {
-    schemaVersion: 1, id: 'recorded-example', kind: 'recorded',
-    task: 'Run the declared quality gates.', agent: 'qa-reviewer', profile: 'harness-tooling',
-    status: 'completed', retries: 0, tools: ['codebase'], filesRead: [], filesChanged: [],
-    gates: [{ stage: 'build', outcome: 'passed' }], notes: ['Produced by the gate runner.'],
-  };
-  assert.equal(validateRunRecord(example).valid, true);
-});
-
-test('a built record reports the real outcome and leaves unmeasured fields absent', () => {
-  const allPassed = buildRunRecord({
-    id: 'run-all-passed', task: 'Run the declared quality gates.', agent: 'qa-reviewer',
-    profile: 'harness-tooling', tools: ['codebase'],
-    gates: [{ stage: 'build', outcome: 'passed' }],
-    notes: ['Produced by the gate runner.'],
-  });
-  assert.equal(allPassed.valid, true);
-  if (allPassed.valid) {
-    assert.equal(allPassed.record.kind, 'recorded');
-    assert.equal(allPassed.record.status, 'completed');
-    assert.equal(allPassed.record.measurements, undefined, 'unmeasured means absent');
-    assert.equal(allPassed.record.durationSeconds, undefined);
-    assert.deepEqual(allPassed.record.filesChanged, []);
-  }
-
-  // One unrun gate is enough to stop the run being reported as completed.
-  const mixed = buildRunRecord({
-    id: 'run-mixed', task: 'Run the declared quality gates.', agent: 'qa-reviewer',
-    profile: 'harness-tooling', tools: ['codebase'],
-    gates: [{ stage: 'build', outcome: 'passed' }, { stage: 'review', outcome: 'unrun' }],
-    notes: ['Produced by the gate runner.'],
-    durationSeconds: 12,
-  });
-  assert.equal(mixed.valid, true);
-  if (mixed.valid) {
-    assert.equal(mixed.record.status, 'failed');
-    assert.equal(mixed.record.durationSeconds, 12);
-  }
-
-  // A run with no gates at all has not completed either.
-  const empty = buildRunRecord({
-    id: 'run-empty', task: 'Run the declared quality gates.', agent: 'qa-reviewer',
-    profile: 'harness-tooling', tools: [], gates: [], notes: ['Nothing applied.'],
-  });
-  assert.equal(empty.valid, true);
-  if (empty.valid) assert.equal(empty.record.status, 'failed');
-});
-
 test('validation and resolution cannot reach the runner', async () => {
   const { readFile, readdir } = await import('node:fs/promises');
   const { fileURLToPath } = await import('node:url');
@@ -260,7 +211,7 @@ test('validation and resolution cannot reach the runner', async () => {
   const guarded = [
     ...await sources(join(root, 'config')),
     ...await sources(join(root, 'core', 'profiles')),
-    ...await sources(join(root, 'core', 'quality')),
+    join(root, 'core', 'quality', 'plan.ts'),
     ...await sources(join(root, 'core', 'context')),
   ];
   assert.ok(guarded.length > 0);

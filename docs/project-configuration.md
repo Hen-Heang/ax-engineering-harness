@@ -59,7 +59,8 @@ share one root, which would otherwise be rejected as ambiguous. See
   dangerous: validity is not authorization or proof of safe execution.
 - Resolution reads manifest and wrapper file names only. It never runs a wrapper,
   parses a build script, or verifies that a command exists on `PATH`.
-- Limits are declarations; no execution engine currently enforces them.
+- `limits.max_duration_seconds` is enforced per command by controlled quality
+  execution. `limits.max_retries` continues to bound workflow failure transitions.
 - Context checks describe the filesystem at validation time. A future reader
   must recheck containment and enforce tool policy at access time.
 - `parseProject` and `loadProject` perform declaration validation only, because a

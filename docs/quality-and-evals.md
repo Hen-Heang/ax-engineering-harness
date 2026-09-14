@@ -1,12 +1,13 @@
 # Quality gates, evals and runs (v1)
 
-Implemented: the pipeline contract, gate planning from a resolved project, the
-outcome model, the eval contract and its scoring, and the run record contract.
-**Not implemented: running a gate.** Nothing in this repository executes a
-project's commands, so every gate it plans is `unrun`.
+Implemented: the pipeline contract, gate planning from a resolved project, controlled
+local execution of executable gates, the outcome model, the eval contract and its
+scoring, and the run record contract. Review, eval, and approval remain manual or
+unrun; no agent evaluation is fabricated.
 
 ```sh
 npm run ax -- quality
+npm run ax -- quality --execute
 ```
 
 ## The outcome model
@@ -20,6 +21,8 @@ usually lost.
 | `failed` | The command ran and did not succeed. |
 | `unavailable` | No command exists for an applicable gate. Nobody could run it. |
 | `unrun` | A command exists, but it was not run. |
+| `timed-out` | Execution started but exceeded the configured duration limit. |
+| `execution-error` | The process could not be started or managed reliably. |
 
 `unavailable` and `unrun` are **not** passes. `pipelinePassed` returns true only
 when every applicable gate is `passed`, and returns false for an empty pipeline, so
@@ -49,6 +52,11 @@ having passed.
 Order is cheapest first, so an expensive stage is only reached once the earlier
 ones have passed. Review and human approval cannot be disabled by a v1 declaration.
 
+Execution is fail-fast after `failed`, `timed-out`, or `execution-error`. Remaining
+executable gates are `unrun`. An unsupported v1 command is `unavailable`; the runner
+never switches to a shell. Manual and unavailable gates make the final result
+`INCOMPLETE`, while an executed failure makes it `FAIL`.
+
 A profile may supply the command for a stage; the project may override it. The plan
 records which, so it is always visible whether a command was declared or inherited.
 
@@ -75,15 +83,21 @@ No scores are stored in this repository, because no evaluation has been run.
 
 ## Runs
 
-A run record describes one task execution. Two rules keep it honest:
+A run record describes one task execution. Three rules keep it honest:
 
-- **`kind` is required.** `example` is illustrative and was never executed;
-  `recorded` requires a real execution. Since nothing here can execute a run,
-  `validateRunRecord` rejects `recorded` outright. That check must be removed
-  deliberately when an execution engine exists, not before.
+- **`kind` is required.** `example` is illustrative and cannot carry executor
+  provenance. `recorded` requires `source: local-executor`, project identity,
+  timestamps, duration, final status, and gate evidence.
+- **Local records stay local.** `ax quality --execute` writes JSON under the selected
+  project's ignored `.ax/runs/` directory. Existing identifiers are never overwritten,
+  and those files are not part of the public web catalog.
 - **An unmeasured value is absent, never zero.** Token and cost fields are optional
   and omitted when nothing was measured, so an unmeasured cost is never displayed
   as free. Ask `isMeasured` rather than reading a default.
+
+Persisted command evidence includes the program, arguments, timing, exit status,
+timeout state, and truncation state. Stdout and stderr are intentionally omitted to
+reduce accidental retention of sensitive output.
 
 `example-cancellation` is the one shipped record. It reports integration tests as
 `unavailable` rather than passed, because the profile supplies no command for them.

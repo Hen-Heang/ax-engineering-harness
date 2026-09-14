@@ -5,38 +5,31 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type Identifier = string;
-export type Text = string;
-export type Path = string;
 /**
- * @minItems 0
- * @maxItems 64
+ * AX Harness v1 run record. Recorded runs require local-executor provenance and execution evidence; examples are illustrative and cannot claim that provenance.
  */
-export type Paths = Path[];
-/**
- * @minItems 1
- * @maxItems 32
- */
-export type Notes = [Note, ...Note[]];
-export type Note = string;
-
-/**
- * AX Harness v1 run record. Describes one task execution. The kind field is required so an illustrative record can never be mistaken for a real one, and measurements are optional because an absent measurement means unmeasured, never zero.
- */
-export interface RunRecord {
+export type RunRecord = {
+  [k: string]: unknown;
+} & {
   schemaVersion: 1;
   id: Identifier;
   /**
-   * example is illustrative and was never executed. recorded requires a real execution, which no current component can produce.
+   * example is illustrative. recorded requires evidence produced by the controlled local executor.
    */
   kind: "example" | "recorded";
+  source?: "local-executor";
+  project?: Identifier;
+  startedAt?: Timestamp;
+  finishedAt?: Timestamp;
+  durationMs?: number;
+  finalStatus?: "pass" | "fail" | "incomplete";
   task: Text;
   /**
    * Role that owned the task.
    */
-  agent: string;
+  agent?: string;
   profile: Identifier;
-  status: "completed" | "failed" | "blocked" | "abandoned";
+  status?: "completed" | "failed" | "blocked" | "abandoned";
   /**
    * Omit when the duration was not measured.
    */
@@ -222,7 +215,11 @@ export interface RunRecord {
     /**
      * unavailable and unrun are distinct from passed and must never be reported as a pass.
      */
-    outcome: "passed" | "failed" | "unavailable" | "unrun";
+    outcome: "passed" | "failed" | "timed-out" | "execution-error" | "unavailable" | "unrun";
+    title?: Line;
+    command?: string | null;
+    reason?: string | null;
+    execution?: Execution;
   }[];
   eval?: {
     id: Identifier;
@@ -238,4 +235,37 @@ export interface RunRecord {
     costUsd?: number;
   };
   notes: Notes;
+};
+export type Identifier = string;
+export type Timestamp = string;
+export type Text = string;
+export type Path = string;
+/**
+ * @minItems 0
+ * @maxItems 64
+ */
+export type Paths = Path[];
+export type Line = string;
+/**
+ * @minItems 1
+ * @maxItems 32
+ */
+export type Notes = [Note, ...Note[]];
+export type Note = string;
+
+export interface Execution {
+  program: string | null;
+  /**
+   * @maxItems 128
+   */
+  args: string[];
+  startedAt: Timestamp;
+  finishedAt: Timestamp;
+  durationMs: number;
+  exitCode: number | null;
+  status: "passed" | "failed" | "timed-out" | "unsupported" | "execution-error";
+  timedOut: boolean;
+  outputTruncated: boolean;
+  unsupportedReason?: "empty" | "shell-syntax";
+  errorCode?: string;
 }

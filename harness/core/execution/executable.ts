@@ -1,6 +1,7 @@
 import { access, stat } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { delimiter, isAbsolute, join, resolve } from 'node:path';
+import { parseCommand } from './command-parser.js';
 
 /**
  * Turning a declared command into something safe to execute.
@@ -16,8 +17,6 @@ import { delimiter, isAbsolute, join, resolve } from 'node:path';
  * Characters that only mean something to a shell. Their presence means the command
  * was written expecting one, so it cannot be honoured without becoming one.
  */
-const SHELL_SYNTAX = /[|&;<>()$`\\"'*?[\]{}!#~\n\r\t]/;
-
 export type ArgvRefusal = 'shell_syntax' | 'empty';
 
 export type ArgvResult =
@@ -26,11 +25,11 @@ export type ArgvResult =
 
 /** Splits a declared command into an argument vector, or refuses. */
 export function toArgv(command: string): ArgvResult {
-  if (SHELL_SYNTAX.test(command)) return { ok: false, refusal: 'shell_syntax' };
-  const argv = command.split(' ').filter(part => part.length > 0);
-  const [file, ...args] = argv;
-  if (file === undefined) return { ok: false, refusal: 'empty' };
-  return { ok: true, argv: [file, ...args] };
+  const parsed = parseCommand(command);
+  if (!parsed.supported) {
+    return { ok: false, refusal: parsed.reason === 'shell-syntax' ? 'shell_syntax' : 'empty' };
+  }
+  return { ok: true, argv: [parsed.command.program, ...parsed.command.args] };
 }
 
 async function isExecutableFile(candidate: string): Promise<boolean> {

@@ -1,18 +1,18 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { loadProject } from '../config/load.js';
 import { checkContextFiles } from '../core/context/resolve.js';
 import { resolveProject } from '../core/profiles/resolve.js';
 import { capabilityMatrix } from '../core/permissions/decide.js';
 import { initialStatuses, pipelinePassed, planQuality, summarize } from '../core/quality/plan.js';
-import { executeGates, EXECUTION_CAPABILITY } from '../core/execution/gates.js';
+import { executeQualityPlan, type QualityGateResult } from '../core/quality/execute.js';
+import { EXECUTION_CAPABILITY } from '../core/execution/gates.js';
 import { buildRunRecord } from '../core/observability/run.js';
-import { can } from '../core/permissions/decide.js';
+import { persistRunRecord } from '../core/observability/storage.js';
 import type { ConfigIssue } from '../config/validate.js';
 
 const usage = [
   'Usage: npm run ax -- validate [path/to/.ax/project.yaml]',
-  '       npm run ax -- quality  [path/to/.ax/project.yaml]',
+  '       npm run ax -- quality [--execute] [path/to/.ax/project.yaml]',
   '       npm run ax -- policy',
 ].join('\n');
 
@@ -72,14 +72,81 @@ async function validate(argument: string | undefined): Promise<void> {
     console.log(`  ${slot} [${command.source}] ${command.command}`);
   }
   console.log(`Assumptions and limitations: harness/profiles/${profile.id}/profile.json`);
-  console.log('Gate execution, agents, and evaluation are not implemented. No commands were run.');
+  console.log('Validation and resolution do not execute gates. No commands were run.');
 }
 
-async function quality(argument: string | undefined): Promise<void> {
-  const outcome = await resolveFrom(argument);
+function duration(milliseconds: number | undefined): string {
+  return milliseconds === undefined ? '' : `${(milliseconds / 1000).toFixed(1)}s`;
+}
+
+function gateDetail(gate: QualityGateResult): string {
+  if (gate.execution?.status === 'unsupported') {
+    return `Unsupported command (${gate.execution.unsupportedReason ?? 'unsupported syntax'})`;
+  }
+  if (gate.reason === 'manual') return 'Manual';
+  if (gate.reason === 'no-command') return 'No command configured';
+  if (gate.reason === 'prior-gate-failed') return 'Not run after an earlier gate failed';
+  if (gate.execution?.status === 'execution-error') {
+    return `Could not execute (${gate.execution.errorCode ?? 'spawn-error'})`;
+  }
+  return '';
+}
+
+async function quality(args: string[]): Promise<void> {
+  const execute = args.includes('--execute');
+  const positional = args.filter(arg => !arg.startsWith('-'));
+  const outcome = await resolveFrom(positional[0]);
   if (!outcome.ok) return report(outcome.issues);
 
   const plan = planQuality(outcome.resolved);
+  if (execute) {
+    const { config, profile } = outcome.resolved;
+    console.log('AX Quality Run');
+    console.log('');
+    console.log(`Project: ${config.project.name}`);
+    console.log(`Profile: ${profile.id}`);
+    console.log(`Root: ${outcome.root}`);
+    console.log('Commands to execute:');
+    for (const entry of plan.filter(item => item.readiness === 'ready')) {
+      console.log(`  ${entry.stage.title}: ${entry.command}`);
+    }
+    console.log(`Limits: ${config.limits.max_duration_seconds}s per command`);
+    console.log('');
+
+    const result = await executeQualityPlan(plan, {
+      root: outcome.root,
+      timeoutSeconds: config.limits.max_duration_seconds,
+      execute: true,
+    });
+    for (const gate of result.gates) {
+      console.log(gate.title.toUpperCase());
+      if (gate.command) console.log(`Command: ${gate.command}`);
+      console.log(`Status: ${gate.outcome.toUpperCase()}`);
+      if (gate.execution) console.log(`Duration: ${duration(gate.execution.durationMs)}`);
+      const detail = gateDetail(gate);
+      if (detail) console.log(detail);
+      console.log('');
+    }
+    console.log('FINAL RESULT');
+    console.log(result.finalStatus.toUpperCase());
+
+    const record = buildRunRecord({
+      project: config.project.name,
+      profile: profile.id,
+      execution: result,
+    });
+    if (!record.valid) return report(record.issues);
+    const persisted = await persistRunRecord(outcome.root, record.record);
+    if (!persisted.saved) {
+      console.error(`Run record was not saved: ${persisted.code}.`);
+      process.exitCode = 1;
+    } else {
+      console.log(`Recorded: ${persisted.file}`);
+    }
+    if (result.finalStatus !== 'pass') process.exitCode = 1;
+    return;
+  }
+
   const statuses = initialStatuses(plan);
   const counts = summarize(statuses);
 
@@ -111,89 +178,12 @@ function showPolicy(): void {
   }
 }
 
-const DEFAULT_ROLE = 'qa-reviewer';
-
-function flagValue(args: string[], name: string): string | undefined {
-  const index = args.indexOf(name);
-  return index === -1 ? undefined : args[index + 1];
-}
-
-/**
- * Runs, or merely reports, a project's declared gates.
- *
- * Nothing is executed without --execute. That default matters: every other command
- * in this CLI is read-only, and this one should not quietly stop being so.
- */
-async function runGates(args: string[]): Promise<void> {
-  const positional = args.filter(arg => !arg.startsWith('-'));
-  const roleFlag = flagValue(args, '--as');
-  const path = positional.find(arg => arg !== roleFlag);
-  const execute = args.includes('--execute');
-  const agent = roleFlag ?? DEFAULT_ROLE;
-
-  const outcome = await resolveFrom(path);
-  if (!outcome.ok) return report(outcome.issues);
-
-  const { resolved, root } = outcome;
-  const report_ = await executeGates(resolved, { root, agent, execute });
-
-  console.log(`Gates for ${resolved.profile.id}, acting as ${agent}.`);
-  if (report_.denied) {
-    console.log(`${agent} does not hold ${EXECUTION_CAPABILITY}, so nothing was run.`);
-  } else if (!execute) {
-    console.log('Reporting only. Pass --execute to run these commands.');
-  }
-  console.log('');
-  console.log(`${'stage'.padEnd(19)}${'outcome'.padEnd(13)}${'detail'.padEnd(22)}command`);
-  for (const gate of report_.gates) {
-    const detail = gate.refusal ?? `exit ${gate.exitCode ?? '?'}${gate.timedOut ? ', timed out' : ''}`;
-    console.log(`${gate.stage.padEnd(19)}${gate.outcome.padEnd(13)}${detail.padEnd(22)}${gate.command ?? ''}`.trimEnd());
-  }
-
-  const counts = { passed: 0, failed: 0, unavailable: 0, unrun: 0 };
-  for (const gate of report_.gates) counts[gate.outcome] += 1;
-  const passed = report_.gates.length > 0 && report_.gates.every(gate => gate.outcome === 'passed');
-  console.log('');
-  console.log(`Outcomes: ${counts.passed} passed, ${counts.failed} failed, ${counts.unavailable} unavailable, ${counts.unrun} unrun.`);
-  console.log(`Pipeline passed: ${passed}.`);
-
-  if (!report_.executed) {
-    console.log('No command was executed.');
-    return;
-  }
-
-  const id = `run-${new Date().toISOString().replace(/[:.]/g, '-').toLowerCase()}`;
-  const record = buildRunRecord({
-    id,
-    task: 'Run the declared quality gates.',
-    agent,
-    profile: resolved.profile.id,
-    tools: ['codebase'],
-    gates: report_.gates.map(gate => ({ stage: gate.stage, outcome: gate.outcome })),
-    durationSeconds: Math.round(report_.durationMs / 1000),
-    notes: [
-      'Recorded by the gate runner. Only commands from the resolved configuration were run.',
-      'Files read and changed are not tracked, and no tokens or cost were measured, so those stay absent.',
-    ],
-  });
-  if (!record.valid) return report(record.issues);
-
-  const directory = join(root, '.ax', 'runs');
-  await mkdir(directory, { recursive: true });
-  const file = join(directory, `${id}.json`);
-  await writeFile(file, `${JSON.stringify(record.record, null, 2)}
-`, 'utf8');
-  console.log(`Recorded: ${file}`);
-  if (!passed) process.exitCode = 1;
-}
-
 const [command, ...args] = process.argv.slice(2);
 if (command === 'validate' && args.length <= 1 && !args[0]?.startsWith('-')) {
   await validate(args[0]);
-} else if (command === 'quality' && args.length <= 1 && !args[0]?.startsWith('-')) {
-  await quality(args[0]);
-} else if (command === 'run') {
-  await runGates(args);
+} else if (command === 'quality' && args.filter(arg => !arg.startsWith('-')).length <= 1
+  && args.every(arg => arg === '--execute' || !arg.startsWith('-'))) {
+  await quality(args);
 } else if (command === 'policy' && args.length === 0) {
   showPolicy();
 } else {

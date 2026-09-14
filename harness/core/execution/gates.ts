@@ -1,8 +1,8 @@
-import { spawn } from 'node:child_process';
 import type { ResolvedProject } from '../profiles/resolve.js';
 import { can } from '../permissions/decide.js';
 import { planQuality, type GateOutcome, type GatePlan } from '../quality/plan.js';
 import { resolveExecutable, toArgv } from './executable.js';
+import { runCommand } from './command-runner.js';
 
 /**
  * Running the gates a project declared.
@@ -22,8 +22,6 @@ import { resolveExecutable, toArgv } from './executable.js';
  * Nothing here is imported by validation or resolution, so loading a configuration
  * still cannot execute anything.
  */
-
-const OUTPUT_LIMIT = 64 * 1024;
 
 /** The capability a role must hold to run a declared quality command. */
 export const EXECUTION_CAPABILITY = 'run_tests';
@@ -75,79 +73,6 @@ function skipped(stage: string, refusal: GateRefusal, outcome: GateOutcome, comm
   return { stage, outcome, command, refusal, exitCode: null, durationMs: null, timedOut: false, output: '' };
 }
 
-interface SpawnOutcome {
-  exitCode: number | null;
-  timedOut: boolean;
-  output: string;
-  durationMs: number;
-}
-
-/**
- * On Windows a `.cmd` or `.bat` target cannot be spawned directly: Node refuses it
- * outright to avoid the argument-injection class of bug, and `npm` is `npm.cmd`.
- * Such a target is therefore run through the command processor — but only after the
- * command has already been rejected for containing any shell syntax, so the
- * processor has nothing to interpret beyond the literal tokens.
- */
-function spawnArgs(
-  file: string,
-  args: string[],
-  platform: NodeJS.Platform,
-  env: NodeJS.ProcessEnv,
-): { file: string; args: string[] } {
-  const batch = /\.(cmd|bat)$/i.test(file);
-  if (platform === 'win32' && batch) {
-    return { file: env.ComSpec ?? 'cmd.exe', args: ['/d', '/s', '/c', file, ...args] };
-  }
-  return { file, args };
-}
-
-function runProcess(
-  file: string,
-  args: string[],
-  cwd: string,
-  env: NodeJS.ProcessEnv,
-  timeoutSeconds: number,
-): Promise<SpawnOutcome> {
-  return new Promise(complete => {
-    const started = Date.now();
-    let output = '';
-    let timedOut = false;
-    let settled = false;
-
-    const child = spawn(file, args, { cwd, env, shell: false, windowsHide: true });
-
-    const collect = (chunk: Buffer) => {
-      if (output.length < OUTPUT_LIMIT) output += chunk.toString('utf8');
-    };
-    child.stdout?.on('data', collect);
-    child.stderr?.on('data', collect);
-
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill('SIGKILL');
-    }, timeoutSeconds * 1000);
-
-    const settle = (exitCode: number | null) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      complete({
-        exitCode,
-        timedOut,
-        output: output.slice(0, OUTPUT_LIMIT),
-        durationMs: Date.now() - started,
-      });
-    };
-
-    child.on('error', error => {
-      output += `${error.message}\n`;
-      settle(null);
-    });
-    child.on('close', code => settle(code));
-  });
-}
-
 /**
  * Executes, or merely reports, the gates a resolved project declares.
  *
@@ -195,24 +120,27 @@ export async function executeGates(
       continue;
     }
 
-    const [name, ...args] = argv.argv;
+    const [name] = argv.argv;
     const file = await resolveExecutable(name, { cwd: options.root, env, platform });
     if (file === null) {
       gates.push(skipped(stage, 'executable-not-found', 'unavailable', command));
       continue;
     }
 
-    const target = spawnArgs(file, args, platform, env);
-    const result = await runProcess(target.file, target.args, options.root, env, timeoutSeconds);
+    const result = await runCommand(command, {
+      cwd: options.root,
+      env,
+      timeoutSeconds,
+    });
     gates.push({
       stage,
-      outcome: result.exitCode === 0 && !result.timedOut ? 'passed' : 'failed',
+      outcome: result.status === 'passed' ? 'passed' : 'failed',
       command,
       refusal: null,
       exitCode: result.exitCode,
       durationMs: result.durationMs,
       timedOut: result.timedOut,
-      output: result.output,
+      output: `${result.stdout}${result.stderr}`,
     });
   }
 

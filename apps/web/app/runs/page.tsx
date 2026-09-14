@@ -9,7 +9,7 @@ import { catalog } from '@/lib/catalog';
 
 export const metadata: Metadata = {
   title: 'Runs · AX Engineering Console',
-  description: 'Execution history. Every record here is an example; nothing has been executed.',
+  description: 'Illustrative run records. Every record published here is an example.',
 };
 
 export default function RunsPage() {
@@ -24,8 +24,8 @@ export default function RunsPage() {
         </p>
         <p>
           <strong className="font-medium text-foreground">The record below is an example.</strong>{' '}
-          The harness can now produce real records, by running a project's gates from the
-          command line, and it writes them to that project's own{' '}
+          The harness can now produce real records, by running a project&apos;s gates from the
+          command line, and it writes them to that project&apos;s own{' '}
           <code className="font-mono text-xs">.ax/runs/</code> directory rather than into
           this repository. A record shipped here is therefore always an example.
         </p>

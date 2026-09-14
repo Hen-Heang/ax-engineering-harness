@@ -58,7 +58,7 @@ test('unknown criteria are reported rather than silently counted', () => {
   assert.equal(result.percent, 100);
 });
 
-test('every run record shipped here is an example, because nothing has executed', () => {
+test('every run record shipped here is an example; local executions are not catalog data', () => {
   assert.ok(runIds.length > 0);
   for (const id of runIds) {
     const record = getRun(id);
@@ -67,14 +67,12 @@ test('every run record shipped here is an example, because nothing has executed'
   }
 });
 
-test('a recorded run is accepted now that the gate runner can produce one', () => {
+test('an example cannot masquerade as a recorded run', () => {
   const example = getRun('example-cancellation');
   assert.ok(example);
   assert.equal(validateRunRecord(example).valid, true);
 
-  // This used to be refused, because nothing could execute a run and such a record
-  // could only have been fabricated. The gate runner lifted that condition.
-  assert.equal(validateRunRecord({ ...example, kind: 'recorded' }).valid, true);
+  assert.equal(validateRunRecord({ ...example, kind: 'recorded' }).valid, false);
 
   // The narrower rule still holds: a record shipped with the harness is an example,
   // which the test above asserts over every record in the registry.

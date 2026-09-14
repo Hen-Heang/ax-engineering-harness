@@ -60,7 +60,8 @@ Roles live in `harness/agents/<id>/agent.json` and procedures in
 `harness/skills/<id>/skill.json`. Contracts are
 `harness/schemas/agent.schema.json` and `harness/schemas/skill.schema.json`.
 
-Every role and procedure is marked **experimental**: the definitions are real,
-reviewed data, but no execution engine exists to carry them out. See
+Every role and procedure is marked **experimental**: the definitions are real and
+reviewed data, but no agent runtime exists to carry them out. Local quality command
+execution does not pretend to be an agent. See
 [policies](policies.md) for what each role is permitted to do, and
 [adapters](adapters.md) for how vendor tools reach these instructions.

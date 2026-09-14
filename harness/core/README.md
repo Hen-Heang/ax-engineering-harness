@@ -15,21 +15,34 @@ Implemented:
   to load a set of definitions that contradict each other.
 - `quality/plan.ts` plans the gate pipeline for a resolved project and keeps
   passed, failed, unavailable, and unrun distinct. It runs no gate.
+- `quality/execute.ts` consumes an existing plan, executes only ready command gates,
+  maps detailed command results into gate outcomes, and stops after the first
+  executed failure. Manual and unavailable gates remain incomplete.
 - `workflow/lifecycle.ts` declares states and permitted transitions, and bounds a
   failure path by the project's declared retry limit. It advances nothing.
 - `evals/registry.ts` holds evaluation definitions and scores a supplied judgement.
   It performs no evaluation and stores no results.
-- `observability/run.ts` validates run records and refuses one claiming to be a
-  real execution, because nothing here can produce one.
+- `observability/run.ts` validates examples and recorded runs, requires executor
+  provenance for recorded runs, and builds records from quality execution results.
+- `observability/storage.ts` persists validated recorded runs under `.ax/runs/`
+  without overwriting an existing identifier, and reloads files under a size bound.
 - `handoff/check.ts` validates handoff records and checks written handoffs for the
   parts another session needs. It checks structure, never truth.
-- `execution/gates.ts` runs the gates a resolved project declares. It is the only
-  module that starts a process, runs nothing unless explicitly told to, never invokes
-  a shell, and checks the acting role's capability first. A test asserts that
-  validation, resolution, context checking and planning cannot reach it.
-- `execution/executable.ts` splits a declared command into arguments and resolves the
-  executable against PATH, so a command that needs a shell is refused rather than run
-  through one.
+- `execution/command-parser.ts` accepts only whitespace-separated program and
+  argument tokens. Shell operators, redirects, substitutions, quotes, escapes,
+  globbing, and control characters are unsupported in v1.
+- `execution/command-runner.ts` is the vendor-neutral process boundary. It uses
+  `spawn` with `shell: false`, captures stdout and stderr separately under one byte
+  limit, applies a timeout, and distinguishes command failure from execution failure.
+- `execution/gates.ts` is the existing quality adapter over the generic runner. A
+  test asserts that validation, resolution, context checking and planning cannot
+  reach the execution modules.
+
+The timeout sends a termination signal to the direct child process. Process-tree
+termination is not guaranteed across platforms. Windows `.cmd` and `.bat` shims are
+not routed through `cmd.exe`; if Node cannot start one directly, the result is an
+`execution-error`. Supporting those shims safely remains execution-layer work and
+must not be implemented by silently enabling a shell.
 
 Planned core responsibilities:
 

@@ -1,5 +1,9 @@
 # Implementation plan
 
+Controlled execution roadmap: Phases 0–3 implemented through local run persistence;
+policy authorization, doctor, init, real Spring validation, and later integrations
+remain planned. The original twelve-phase foundation below remains historical context.
+
 The user approved the Phase 1 architecture on 2026-09-11. Work proceeds in
 bounded phases, inspecting existing code and verifying each change before the next.
 

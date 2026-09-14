@@ -2,17 +2,23 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/Hen-Heang/ax-engineering-harness/schemas/run/v1",
   "title": "RunRecord",
-  "description": "AX Harness v1 run record. Describes one task execution. The kind field is required so an illustrative record can never be mistaken for a real one, and measurements are optional because an absent measurement means unmeasured, never zero.",
+  "description": "AX Harness v1 run record. Recorded runs require local-executor provenance and execution evidence; examples are illustrative and cannot claim that provenance.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "id", "kind", "task", "agent", "profile", "status", "retries", "tools", "filesRead", "filesChanged", "gates", "notes"],
+  "required": ["schemaVersion", "id", "kind", "task", "profile", "retries", "tools", "filesRead", "filesChanged", "gates", "notes"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "id": { "$ref": "#/definitions/identifier" },
     "kind": {
       "enum": ["example", "recorded"],
-      "description": "example is illustrative and was never executed. recorded requires a real execution, which no current component can produce."
+      "description": "example is illustrative. recorded requires evidence produced by the controlled local executor."
     },
+    "source": { "const": "local-executor" },
+    "project": { "$ref": "#/definitions/identifier" },
+    "startedAt": { "$ref": "#/definitions/timestamp" },
+    "finishedAt": { "$ref": "#/definitions/timestamp" },
+    "durationMs": { "type": "integer", "minimum": 0 },
+    "finalStatus": { "enum": ["pass", "fail", "incomplete"] },
     "task": { "$ref": "#/definitions/text" },
     "agent": { "$ref": "#/definitions/identifier", "description": "Role that owned the task." },
     "profile": { "$ref": "#/definitions/identifier" },
@@ -33,9 +39,13 @@
         "properties": {
           "stage": { "$ref": "#/definitions/identifier" },
           "outcome": {
-            "enum": ["passed", "failed", "unavailable", "unrun"],
+            "enum": ["passed", "failed", "timed-out", "execution-error", "unavailable", "unrun"],
             "description": "unavailable and unrun are distinct from passed and must never be reported as a pass."
-          }
+          },
+          "title": { "$ref": "#/definitions/line" },
+          "command": { "type": ["string", "null"], "maxLength": 2048 },
+          "reason": { "type": ["string", "null"], "maxLength": 64 },
+          "execution": { "$ref": "#/definitions/execution" }
         }
       }
     },
@@ -61,8 +71,48 @@
     },
     "notes": { "$ref": "#/definitions/notes" }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "recorded" } }, "required": ["kind"] },
+      "then": {
+        "properties": {
+          "source": {}, "project": {}, "startedAt": {}, "finishedAt": {},
+          "durationMs": {}, "finalStatus": {}
+        },
+        "required": ["source", "project", "startedAt", "finishedAt", "durationMs", "finalStatus"]
+      },
+      "else": {
+        "properties": {
+          "agent": {}, "status": {}, "source": false, "project": false,
+          "startedAt": false, "finishedAt": false, "durationMs": false,
+          "finalStatus": false
+        },
+        "required": ["agent", "status"]
+      }
+    }
+  ],
   "definitions": {
     "identifier": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+    "timestamp": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$" },
+    "line": { "type": "string", "minLength": 1, "maxLength": 96, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["program", "args", "startedAt", "finishedAt", "durationMs", "exitCode", "status", "timedOut", "outputTruncated"],
+      "properties": {
+        "program": { "type": ["string", "null"], "maxLength": 512 },
+        "args": { "type": "array", "maxItems": 128, "items": { "type": "string", "maxLength": 2048 } },
+        "startedAt": { "$ref": "#/definitions/timestamp" },
+        "finishedAt": { "$ref": "#/definitions/timestamp" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "exitCode": { "type": ["integer", "null"] },
+        "status": { "enum": ["passed", "failed", "timed-out", "unsupported", "execution-error"] },
+        "timedOut": { "type": "boolean" },
+        "outputTruncated": { "type": "boolean" },
+        "unsupportedReason": { "enum": ["empty", "shell-syntax"] },
+        "errorCode": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
     "text": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^(?=.*\\S)[^\\u0000-\\u001f]+$" },
     "path": {
       "type": "string",
