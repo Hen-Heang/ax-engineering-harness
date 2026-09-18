@@ -47,6 +47,15 @@ share one root, which would otherwise be rejected as ambiguous. See
 [profiles](profiles.md) for resolution, detection, and precedence rules.
 `multi-repo` mode is rejected until its contract and implementation exist.
 
+`init --write` also creates a Claude Code starter surface under `.claude/`: an
+entrypoint, conservative settings, project metadata, base/security/verification
+rules (including UI and accessibility), plan/develop/review/UI-review skills,
+planner/developer/frontend/reviewer/QA role prompts, and a documentation index.
+This is a generic foundation modelled on a mature team
+workspace. It does not copy private team files, invent domain rules, connect MCP
+servers, start agents, read secrets, or write databases. Existing files are kept
+byte-for-byte and can be filled in or replaced deliberately by the project team.
+
 ## Safety and limitations
 
 - Parsing is limited to 64 KiB; duplicate keys, aliases, unknown tags, multiple

@@ -261,6 +261,13 @@ bounded phases, inspecting existing code and verifying each change before the ne
 Every planned phase is implemented. Two questions left open through the phases are
 now settled:
 
+The post-phase adoption layer now also supplies a generic Claude Code starter pack
+from `ax init`: `.claude/CLAUDE.md`, settings, project metadata, rules, skills,
+role prompts, and a documentation index. It is deliberately a foundation rather
+than a copy of a private team workspace. Existing files are preserved individually;
+project-specific domain rules, hooks, MCP connections, and tool permissions still
+require deliberate configuration.
+
 - **Licensing.** The project is MIT licensed. The grant is scoped in `NOTICE`: it
   covers the work written here and stops short of the preserved learning projects,
   which contain tutorial-derived material the author does not hold rights to.

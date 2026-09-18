@@ -107,7 +107,7 @@ function gateDetail(gate: QualityGateResult): string {
 
 /*
  * The CLI runs as the person who typed the command, in their own checkout. That is
- * not an agent acting under a role, and labelling it one would put a capability
+ * not an agent acting under a role, and labeling it one would put a capability
  * decision in the record that nothing actually made.
  */
 const CLI_ACTOR: QualityActor = { kind: 'human-cli' };
@@ -336,7 +336,7 @@ async function init(args: string[]): Promise<void> {
   console.log('Files');
   for (const file of plan.files) {
     const verb = file.status === 'create' ? 'create' : 'keep  ';
-    console.log(`  ${verb}  ${file.path.padEnd(28)}${file.note ?? ''}`);
+    console.log(`  ${verb}  ${file.path.padEnd(38)}${file.note ?? ''}`);
   }
 
   if (!write) {

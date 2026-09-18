@@ -41,7 +41,13 @@ test('planning proposes files without creating any of them', async t => {
   assert.deepEqual(
     plan.files.map(file => file.path),
     ['.ax/project.yaml', '.ax/.gitignore', '.ax/context/architecture.md',
-      '.ax/context/domain.md', '.ax/context/database.md', 'AGENTS.md'],
+      '.ax/context/domain.md', '.ax/context/database.md', 'AGENTS.md',
+      '.claude/CLAUDE.md', '.claude/settings.json', '.claude/config/project.yaml',
+      '.claude/rules/base-rule.md', '.claude/rules/security.md', '.claude/rules/verification.md', '.claude/rules/ui.md',
+      '.claude/skills/develop/SKILL.md', '.claude/skills/dev-plan/SKILL.md',
+      '.claude/skills/code-review/SKILL.md', '.claude/skills/ui-review/SKILL.md', '.claude/agents/planner.md',
+      '.claude/agents/developer.md', '.claude/agents/frontend.md', '.claude/agents/reviewer.md', '.claude/agents/qa.md',
+      '.claude/docs/README.md', '.claude/.gitignore'],
   );
   assert.ok(plan.files.every(file => file.status === 'create'));
 
@@ -74,6 +80,11 @@ test('what init generates validates, resolves, and passes the doctor', async t =
   // only the profile's gates are on.
   assert.equal(report.quality.find(gate => gate.stage === 'build')?.availability, 'available');
   assert.equal(report.quality.find(gate => gate.stage === 'lint')?.availability, 'disabled');
+  assert.match(await readFile(join(root, '.claude', 'CLAUDE.md'), 'utf8'), /Read the repository root/);
+  assert.match(await readFile(join(root, '.claude', 'settings.json'), 'utf8'), /git push --force/);
+  assert.match(await readFile(join(root, '.claude', 'skills', 'develop', 'SKILL.md'), 'utf8'), /smallest coherent edit/);
+  assert.match(await readFile(join(root, '.claude', 'rules', 'ui.md'), 'utf8'), /keyboard navigation/);
+  assert.match(await readFile(join(root, '.claude', 'skills', 'ui-review', 'SKILL.md'), 'utf8'), /responsive layout/);
 });
 
 test('an existing file is kept, and AGENTS.md gets a template beside it instead', async t => {

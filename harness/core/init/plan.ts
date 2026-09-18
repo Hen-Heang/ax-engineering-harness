@@ -4,6 +4,7 @@ import { getProfile, profileIds } from '../profiles/registry.js';
 import { currentPlatform, resolveRunner, type BuildSystemId } from '../buildsystem/detect.js';
 import { detectCommands } from '../capability/detect.js';
 import type { ProfileDefinition } from '../../config/profile.generated.js';
+import { claudePack } from './claude-pack.js';
 
 /**
  * Proposing an adoption, without performing one.
@@ -382,6 +383,7 @@ export async function planInit(options: InitOptions): Promise<InitPlan> {
       contents: AGENTS_TEMPLATE(name, profile.id),
       note: 'repository instructions',
     },
+    ...claudePack(name, profile.id),
   ];
 
   for (const file of proposed) {

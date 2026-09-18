@@ -27,6 +27,9 @@ and validating agent harnesses, MCP, evaluation, and delivery practices.
 - Quality pipeline planning that keeps passed, failed, unavailable and unrun
   distinct, a lifecycle with bounded retries, eval scoring, and handoff checking.
 - A local read-only CLI, typecheck, automated tests, and package build.
+- `ax init` creates a complete starter surface for Claude Code: entrypoint,
+  conservative settings, project metadata, rules, skills, role prompts, and a
+  documentation index, while preserving existing files.
 - Browser verification of every console page at four widths, with automated
   accessibility checks, run as part of `npm run check`.
 - An `apps/web` console with persistent navigation, a mobile sheet, an Overview page
@@ -87,6 +90,14 @@ you ask again with `--write`:
 npm run ax -- init /path/to/your-project
 npm run ax -- init --write /path/to/your-project
 ```
+
+The generated adoption includes the Harness declaration and context under `.ax/`,
+the vendor-neutral `AGENTS.md`, and a conservative Claude Code starter pack under
+`.claude/`: an entrypoint, settings, project metadata, rules, planning/development/
+review skills, role prompts, and a documentation index. These are generic
+foundations modelled on a mature team workspace; they do not invent the project's
+domain rules, connect tools, start agents, or grant database access. Existing files
+are never replaced, so an established `.claude/` workspace is preserved file by file.
 
 It enables a gate where either the chosen profile or the project's own manifest
 supplies a command for it, so the generated declaration describes the project and

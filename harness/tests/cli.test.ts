@@ -147,7 +147,7 @@ test('CLI init plans without writing, and only writes when told to', t => {
   const written = run('init', '--write', projectRoot);
   assert.equal(written.status, 0, written.stderr);
   assert.match(written.stdout, /written\s+\.ax\/project\.yaml/);
-  assert.deepEqual(readdirSync(projectRoot).sort(), ['.ax', 'AGENTS.md', 'pom.xml']);
+  assert.deepEqual(readdirSync(projectRoot).sort(), ['.ax', '.claude', 'AGENTS.md', 'pom.xml']);
 
   // The generated declaration is immediately usable, which is the point of it.
   const doctor = run('doctor', join(projectRoot, '.ax', 'project.yaml'));
